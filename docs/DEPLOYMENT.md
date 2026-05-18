@@ -26,6 +26,7 @@ PUBLIC_BASE_URL=https://register.example.com
 SERVER_NAME=register.example.com
 WECHAT_MODE=token_only
 WECHAT_MP_CALLBACK_BASE_URL=https://register.example.com
+NGINX_HTTP_PORT=127.0.0.1:8080
 ```
 
 ## 3. HTTPS 证书
@@ -53,6 +54,18 @@ cp deploy/nginx/https.conf.template.example deploy/nginx/templates/https.conf.te
 docker compose up -d --build
 ```
 
+默认部署模式是：Docker 项目只在服务器本机监听一个端口，系统 Nginx 负责公网 `80/443`、域名、证书和 HTTPS。
+
+```env
+NGINX_HTTP_PORT=127.0.0.1:8080
+```
+
+系统 Nginx 反向代理到：
+
+```text
+http://127.0.0.1:8080
+```
+
 如果服务器访问 Debian、PyPI 或 npm 较慢，可以在 `.env` 中配置构建镜像源。腾讯云服务器可先使用：
 
 ```env
@@ -70,12 +83,13 @@ NPM_REGISTRY=https://mirrors.cloud.tencent.com/npm/
 docker compose up -d --build
 ```
 
-如果暂时没有 HTTPS 证书，不要复制 `https.conf.template`，只用 HTTP 完成首次验证。生产环境必须通过容器内 HTTPS 或外层反代提供 HTTPS。
+如果暂时没有 HTTPS 证书，先用系统 Nginx 的 HTTP 反代完成首次验证。生产环境的 HTTPS 由系统 Nginx 负责。
 
 检查：
 
 ```bash
 docker compose ps
+curl http://127.0.0.1:8080/api/health
 curl https://register.example.com/api/health
 ```
 

@@ -23,7 +23,7 @@ docker compose up --build
 健康检查：
 
 ```text
-http://localhost/api/health
+http://127.0.0.1:8080/api/health
 ```
 
 创建本地演示邀请：
@@ -35,7 +35,7 @@ docker compose exec backend python -m app.scripts.create_demo_invitation
 然后打开：
 
 ```text
-http://localhost/i/demo-token
+http://127.0.0.1:8080/i/demo-token
 ```
 
 ## 质量检查
