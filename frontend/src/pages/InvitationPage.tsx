@@ -130,7 +130,7 @@ async function setupWechatShare() {
     title: config.title || '公司注册资料填写',
     desc: config.desc || '请按要求填写公司名称、股东、注册资金、经营范围等信息',
     link: signUrl,
-    imgUrl: config.imgUrl || `${window.location.origin}/wechat-share.svg`,
+    imgUrl: config.imgUrl || `${window.location.origin}/wechat-share.png`,
   }
 
   wx.config({
