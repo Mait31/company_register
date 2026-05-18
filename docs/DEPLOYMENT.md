@@ -53,6 +53,23 @@ cp deploy/nginx/https.conf.template.example deploy/nginx/templates/https.conf.te
 docker compose up -d --build
 ```
 
+如果服务器访问 Debian、PyPI 或 npm 较慢，可以在 `.env` 中配置构建镜像源。腾讯云服务器可先使用：
+
+```env
+APT_DEBIAN_MIRROR=https://mirrors.cloud.tencent.com/debian
+APT_SECURITY_MIRROR=https://mirrors.cloud.tencent.com/debian-security
+PIP_INDEX_URL=https://mirrors.cloud.tencent.com/pypi/simple
+PIP_DEFAULT_TIMEOUT=180
+PIP_RETRIES=10
+NPM_REGISTRY=https://mirrors.cloud.tencent.com/npm/
+```
+
+阿里云或其他国内服务器也可以改成对应云厂商镜像源。配置后重新执行：
+
+```bash
+docker compose up -d --build
+```
+
 如果暂时没有 HTTPS 证书，不要复制 `https.conf.template`，只用 HTTP 完成首次验证。生产环境必须通过容器内 HTTPS 或外层反代提供 HTTPS。
 
 检查：
