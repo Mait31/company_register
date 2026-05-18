@@ -1,0 +1,91 @@
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #f5f7fb;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.brand {
+  color: #fff;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.app-content {
+  padding: 24px;
+}
+
+.page-stack {
+  width: 100%;
+}
+
+.page-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.center-page,
+.public-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-card,
+.public-card {
+  width: min(100%, 720px);
+}
+
+.public-steps {
+  margin: 24px 0;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.faq-panel {
+  margin-top: 24px;
+}
+
+@media (max-width: 640px) {
+  .app-header {
+    padding-inline: 12px;
+  }
+
+  .brand {
+    font-size: 14px;
+  }
+
+  .app-content {
+    padding: 12px;
+  }
+
+  .page-heading {
+    flex-direction: column;
+  }
+
+  .center-page,
+  .public-page {
+    align-items: flex-start;
+    padding: 12px;
+  }
+}
