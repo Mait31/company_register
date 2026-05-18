@@ -99,3 +99,30 @@ docker compose up -d --build
 ```bash
 alembic upgrade head
 ```
+
+## 8. 微信分享卡片
+
+当前 H5 支持“用户在微信内打开页面后，再分享给别人时显示自定义卡片”。
+
+服务器 `.env` 需要配置：
+
+```env
+WECHAT_MP_APP_ID=你的公众号 AppID
+WECHAT_MP_APP_SECRET=你的公众号 AppSecret
+WECHAT_MP_CALLBACK_BASE_URL=https://你的域名
+WECHAT_SHARE_TITLE=公司注册资料填写
+WECHAT_SHARE_DESC=请按要求填写公司名称、股东、注册资金、经营范围等信息
+WECHAT_SHARE_IMAGE_URL=https://你的域名/wechat-share.svg
+```
+
+公众号后台需要配置：
+
+- `JS 接口安全域名`：只填域名，不带 `https://`，不带路径。
+- `API IP 白名单`：填服务器公网 IP。
+- H5 必须使用 HTTPS 正式域名访问。
+
+说明：
+
+- `WECHAT_MODE=token_only` 可以继续保留，它只表示当前不强制 OAuth。
+- JS SDK 分享签名仍然需要 AppID/AppSecret、JS 接口安全域名和 HTTPS。
+- 分享卡片只控制“页面已经在微信内打开后，用户再分享出去”的展示效果。

@@ -1,9 +1,10 @@
 from secrets import token_urlsafe
 from urllib.parse import urlencode
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, Query
 
 from app.core.config import settings
+from app.services.wechat_js_sdk import WeChatApiError, wechat_js_sdk_service
 
 router = APIRouter()
 
@@ -39,3 +40,11 @@ def wechat_oauth_callback(code: str, state: str | None = None) -> dict:
     if settings.wechat_mode == "token_only":
         return {"status": "skipped", "mode": settings.wechat_mode, "message": "token_only 模式不处理 OAuth 回调"}
     return {"status": "planned", "code": code, "state": state, "message": "待接入公众号网页授权"}
+
+
+@router.get("/js-sdk-signature")
+def wechat_js_sdk_signature(url: str = Query(..., min_length=1)) -> dict:
+    try:
+        return wechat_js_sdk_service.create_signature(url)
+    except WeChatApiError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc

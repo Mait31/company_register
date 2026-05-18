@@ -46,6 +46,115 @@ type InvitationFormValues = {
   filled_date?: { format: (template: string) => string } | string
 }
 
+type WeChatJsSdkSignature = {
+  enabled: boolean
+  appId?: string
+  timestamp?: number
+  nonceStr?: string
+  signature?: string
+  title?: string
+  desc?: string
+  imgUrl?: string
+}
+
+type WeChatJsApi = {
+  config: (options: {
+    debug: boolean
+    appId: string
+    timestamp: number
+    nonceStr: string
+    signature: string
+    jsApiList: string[]
+  }) => void
+  ready: (callback: () => void) => void
+  updateAppMessageShareData?: (options: ShareOptions) => void
+  updateTimelineShareData?: (options: ShareOptions) => void
+  onMenuShareAppMessage?: (options: ShareOptions) => void
+  onMenuShareTimeline?: (options: ShareOptions) => void
+}
+
+type ShareOptions = {
+  title: string
+  desc?: string
+  link: string
+  imgUrl: string
+}
+
+declare global {
+  interface Window {
+    wx?: WeChatJsApi
+  }
+}
+
+function loadWechatJsSdk() {
+  return new Promise<void>((resolve, reject) => {
+    if (window.wx) {
+      resolve()
+      return
+    }
+
+    const existing = document.querySelector<HTMLScriptElement>('script[data-wechat-js-sdk="true"]')
+    if (existing) {
+      existing.addEventListener('load', () => resolve(), { once: true })
+      existing.addEventListener('error', () => reject(new Error('wechat_js_sdk_load_failed')), {
+        once: true,
+      })
+      return
+    }
+
+    const script = document.createElement('script')
+    script.src = 'https://res.wx.qq.com/open/js/jweixin-1.6.0.js'
+    script.async = true
+    script.dataset.wechatJsSdk = 'true'
+    script.onload = () => resolve()
+    script.onerror = () => reject(new Error('wechat_js_sdk_load_failed'))
+    document.head.appendChild(script)
+  })
+}
+
+async function setupWechatShare() {
+  const signUrl = window.location.href.split('#')[0]
+  const response = await fetch(`/api/wechat/js-sdk-signature?url=${encodeURIComponent(signUrl)}`)
+  if (!response.ok) return
+
+  const config = (await response.json()) as WeChatJsSdkSignature
+  if (!config.enabled || !config.appId || !config.timestamp || !config.nonceStr || !config.signature) {
+    return
+  }
+
+  await loadWechatJsSdk()
+  const wx = window.wx
+  if (!wx) return
+
+  const share: ShareOptions = {
+    title: config.title || '公司注册资料填写',
+    desc: config.desc || '请按要求填写公司名称、股东、注册资金、经营范围等信息',
+    link: signUrl,
+    imgUrl: config.imgUrl || `${window.location.origin}/wechat-share.svg`,
+  }
+
+  wx.config({
+    debug: false,
+    appId: config.appId,
+    timestamp: config.timestamp,
+    nonceStr: config.nonceStr,
+    signature: config.signature,
+    jsApiList: [
+      'updateAppMessageShareData',
+      'updateTimelineShareData',
+      'onMenuShareAppMessage',
+      'onMenuShareTimeline',
+    ],
+  })
+
+  wx.ready(() => {
+    wx.updateAppMessageShareData?.(share)
+    wx.updateTimelineShareData?.(share)
+    wx.onMenuShareAppMessage?.(share)
+    wx.onMenuShareTimeline?.(share)
+  })
+}
+
 export function InvitationPage() {
   const { token } = useParams()
   const [form] = Form.useForm<InvitationFormValues>()
@@ -74,6 +183,11 @@ export function InvitationPage() {
     }
 
     void loadInvitation()
+  }, [token])
+
+  useEffect(() => {
+    if (!token) return
+    void setupWechatShare()
   }, [token])
 
   const submit = async (values: InvitationFormValues) => {
