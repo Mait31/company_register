@@ -66,6 +66,15 @@ body {
   margin-top: 24px;
 }
 
+.debug-output {
+  max-height: 280px;
+  margin: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+}
+
 @media (max-width: 640px) {
   .app-header {
     padding-inline: 12px;
