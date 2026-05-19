@@ -1,6 +1,6 @@
 import { Layout } from 'antd'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import { AdminOrdersPage } from './pages/AdminOrdersPage'
+import { AdminOrderDetailPage, AdminOrderEditPage, AdminOrdersPage } from './pages/AdminOrdersPage'
 import { InvitationPage } from './pages/InvitationPage'
 import { LoginPage } from './pages/LoginPage'
 
@@ -28,6 +28,8 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/admin/orders" element={<AdminOrdersPage />} />
+          <Route path="/admin/orders/:id" element={<AdminOrderDetailPage />} />
+          <Route path="/admin/orders/:id/edit" element={<AdminOrderEditPage />} />
           <Route path="*" element={<Navigate to="/admin/orders" replace />} />
         </Routes>
       </Content>

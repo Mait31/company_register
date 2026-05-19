@@ -499,6 +499,117 @@ body {
   text-align: center;
 }
 
+.detail-hero {
+  display: grid;
+  grid-template-columns: 116px minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: end;
+  padding: 8px 0 0;
+}
+
+.detail-hero h2.ant-typography {
+  margin: 4px 0 8px;
+  font-size: 34px;
+  line-height: 1.18;
+}
+
+.detail-hero .ant-btn {
+  height: 40px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.detail-page-card,
+.edit-page-card {
+  border: 0;
+  border-radius: 24px;
+  box-shadow: 0 18px 46px rgba(15, 23, 42, 0.07);
+}
+
+.detail-page-card .ant-card-body,
+.edit-page-card .ant-card-body {
+  padding: 28px;
+}
+
+.detail-page-card h4.ant-typography {
+  margin: 0 0 18px;
+}
+
+.detail-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.detail-summary-grid div,
+.submitted-field {
+  padding: 16px;
+  background: #f7f8fa;
+  border: 1px solid #eef0f3;
+  border-radius: 16px;
+}
+
+.detail-summary-grid span,
+.submitted-field span {
+  display: block;
+  margin-bottom: 8px;
+  color: #6e6e73;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.detail-summary-grid strong,
+.submitted-field p {
+  margin: 0;
+  color: #111827;
+  font-size: 16px;
+  font-weight: 720;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.submitted-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.edit-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 18px;
+}
+
+.wide-form-item {
+  grid-column: 1 / -1;
+}
+
+.edit-page-card .ant-form-item-label > label {
+  color: #1d1d1f;
+  font-weight: 700;
+}
+
+.edit-page-card .ant-input,
+.edit-page-card .ant-select-selector,
+.edit-page-card textarea.ant-input {
+  border-radius: 12px;
+}
+
+.edit-action-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.edit-action-row .ant-btn {
+  min-width: 120px;
+  height: 42px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
 .follow-table .ant-table {
   background: transparent;
 }
@@ -676,6 +787,26 @@ body {
 
   .admin-side {
     order: -1;
+  }
+
+  .detail-hero {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .detail-hero h2.ant-typography {
+    font-size: 30px;
+  }
+
+  .detail-summary-grid,
+  .submitted-field-grid,
+  .edit-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-page-card .ant-card-body,
+  .edit-page-card .ant-card-body {
+    padding: 20px;
   }
 
   .intake-card .ant-card-body {

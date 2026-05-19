@@ -1,5 +1,6 @@
-import { Button, Card, Descriptions, Drawer, Form, Input, Select, Space, Tag, Typography, message } from 'antd'
-import { useEffect, useState } from 'react'
+import { Button, Card, Form, Input, Select, Space, Tag, Typography, message } from 'antd'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 
 type InvitationListItem = {
   id: number
@@ -60,7 +61,7 @@ const statusText: Record<string, string> = {
 const statusColor: Record<string, string> = {
   waiting_customer: 'default',
   pending_internal_confirm: 'orange',
-  processing: 'blue',
+  processing: 'orange',
   completed: 'green',
   draft: 'default',
 }
@@ -71,6 +72,43 @@ const statusFilters = [
   { value: 'all', label: '全部' },
   { value: 'pending_internal_confirm', label: '待整理' },
   { value: 'completed', label: '已归档' },
+]
+
+const fieldGroups = [
+  {
+    title: '公司信息',
+    fields: [
+      ['full_company_name', '公司名称'],
+      ['legal_address', '法律地址'],
+      ['registered_capital', '注册资金'],
+      ['business_scope', '主要经营范围'],
+    ],
+  },
+  {
+    title: '人员与股东',
+    fields: [
+      ['shareholder_note', '股东信息'],
+      ['director_name', '总经理/法人代表姓名'],
+      ['director_phone', '联系电话'],
+      ['director_address', '法人/总经理地址'],
+    ],
+  },
+  {
+    title: '附加服务',
+    fields: [
+      ['tax_regime', '税务制度'],
+      ['need_bank_account', '是否需要银行开户'],
+      ['need_accounting', '是否需要代理记账'],
+      ['visa_type', '签证'],
+    ],
+  },
+  {
+    title: '填写人',
+    fields: [
+      ['name', '填写人姓名'],
+      ['mobile', '填写人联系电话'],
+    ],
+  },
 ]
 
 function adminHeaders() {
@@ -97,8 +135,19 @@ function textToBool(value?: string) {
   return undefined
 }
 
+function submittedFields(detail: InvitationDetail) {
+  return detail.participants[0]?.submitted_fields_json || {}
+}
+
+function fieldValue(fields: Record<string, unknown>, key: string) {
+  const value = fields[key]
+  if (typeof value === 'boolean') return value ? '是' : '否'
+  if (value === undefined || value === null || value === '') return '未填写'
+  return String(value)
+}
+
 function toFormValues(detail: InvitationDetail): FollowFormValues {
-  const fields = detail.participants[0]?.submitted_fields_json || {}
+  const fields = submittedFields(detail)
   return {
     status: detail.status === 'completed' ? 'completed' : 'pending_internal_confirm',
     remark: detail.remark || undefined,
@@ -138,16 +187,22 @@ function toSubmittedFields(values: FollowFormValues) {
   }
 }
 
+async function fetchDetail(id: string) {
+  const response = await fetch(`/api/admin/invitations/${id}`, { headers: adminHeaders() })
+  if (!response.ok) throw new Error('加载资料详情失败')
+  return (await response.json()) as InvitationDetail
+}
+
+function StatusTag({ status }: { status: string }) {
+  return <Tag color={statusColor[status] || 'default'}>{statusText[status] || status}</Tag>
+}
+
 export function AdminOrdersPage() {
+  const navigate = useNavigate()
   const [rows, setRows] = useState<InvitationListItem[]>([])
   const [statusFilter, setStatusFilter] = useState('all')
   const [loading, setLoading] = useState(false)
-  const [detail, setDetail] = useState<InvitationDetail | null>(null)
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [form] = Form.useForm<FollowFormValues>()
-  const publicBaseUrl = window.location.origin
-  const publicIntakeLink = `${publicBaseUrl}/i/company-registration`
+  const publicIntakeLink = `${window.location.origin}/i/company-registration`
 
   const loadRows = async () => {
     setLoading(true)
@@ -162,97 +217,33 @@ export function AdminOrdersPage() {
     }
   }
 
-  const openDetail = async (id: number) => {
-    const response = await fetch(`/api/admin/invitations/${id}`, { headers: adminHeaders() })
-    if (!response.ok) {
-      message.error('加载资料详情失败')
-      return
-    }
-    const data = (await response.json()) as InvitationDetail
-    setDetail(data)
-    form.setFieldsValue(toFormValues(data))
-    setDrawerOpen(true)
-  }
-
-  const saveDetail = async (values: FollowFormValues) => {
-    if (!detail) return
-    setSaving(true)
-    try {
-      const response = await fetch(`/api/admin/invitations/${detail.id}`, {
-        method: 'PATCH',
-        headers: adminHeaders(),
-        body: JSON.stringify({
-          status: values.status,
-          remark: values.remark || null,
-          submitted_fields_json: toSubmittedFields(values),
-        }),
-      })
-      if (!response.ok) throw new Error('保存资料失败')
-      const updated = (await response.json()) as InvitationDetail
-      setDetail(updated)
-      form.setFieldsValue(toFormValues(updated))
-      await loadRows()
-      message.success('资料已保存')
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : '保存资料失败')
-    } finally {
-      setSaving(false)
-    }
-  }
-
   const copyPublicLink = async () => {
     await navigator.clipboard.writeText(publicIntakeLink)
     message.success('客户登记链接已复制，可直接发给客户')
   }
 
-  const openPublicLink = () => {
-    window.open(publicIntakeLink, '_blank', 'noopener,noreferrer')
-  }
-
   const summary = {
     total: rows.length,
-    pending: rows.filter((row) => row.status === 'pending_internal_confirm' || row.status === 'processing').length,
+    pending: rows.filter((row) => row.status !== 'completed').length,
     completed: rows.filter((row) => row.status === 'completed').length,
   }
 
-  const visibleRows = rows
-    .filter((row) => {
-      if (statusFilter === 'all') return true
-      if (statusFilter === 'pending_internal_confirm') return row.status !== 'completed'
-      return row.status === statusFilter
-    })
-    .sort((a, b) => {
-      const aRank = statusOrder.includes(a.status) ? statusOrder.indexOf(a.status) : statusOrder.length
-      const bRank = statusOrder.includes(b.status) ? statusOrder.indexOf(b.status) : statusOrder.length
-      const statusDiff = aRank - bRank
-      if (statusDiff !== 0) return statusDiff
-      return new Date(b.latest_submitted_at || b.updated_at).getTime() - new Date(a.latest_submitted_at || a.updated_at).getTime()
-    })
-
-  const renderFollowCards = () => (
-    <div className="follow-feed">
-      {visibleRows.map((row) => (
-        <button className="follow-card" key={row.id} type="button" onClick={() => openDetail(row.id)}>
-          <span className={`follow-status-dot follow-status-${row.status}`} />
-          <div className="follow-card-body">
-            <div className="follow-card-top">
-              <Tag color={statusColor[row.status] || 'default'}>{statusText[row.status] || row.status}</Tag>
-              <span className="follow-time">{displayTime(row.latest_submitted_at)}</span>
-            </div>
-            <div className="follow-card-title">{row.company_name || '未填写公司名称'}</div>
-            <div className="follow-card-meta">
-              <span>{row.contact_name || row.contact_mobile || '未填写联系人'}</span>
-              <span>{row.contact_mobile || '暂无电话'}</span>
-            </div>
-            {row.remark ? <div className="follow-card-note">{row.remark}</div> : null}
-          </div>
-          <span className="follow-card-arrow">›</span>
-        </button>
-      ))}
-      {!loading && visibleRows.length === 0 ? (
-        <div className="empty-follow-list">暂无符合条件的客户资料</div>
-      ) : null}
-    </div>
+  const visibleRows = useMemo(
+    () =>
+      rows
+        .filter((row) => {
+          if (statusFilter === 'all') return true
+          if (statusFilter === 'pending_internal_confirm') return row.status !== 'completed'
+          return row.status === statusFilter
+        })
+        .sort((a, b) => {
+          const aRank = statusOrder.includes(a.status) ? statusOrder.indexOf(a.status) : statusOrder.length
+          const bRank = statusOrder.includes(b.status) ? statusOrder.indexOf(b.status) : statusOrder.length
+          const statusDiff = aRank - bRank
+          if (statusDiff !== 0) return statusDiff
+          return new Date(b.latest_submitted_at || b.updated_at).getTime() - new Date(a.latest_submitted_at || a.updated_at).getTime()
+        }),
+    [rows, statusFilter],
   )
 
   useEffect(() => {
@@ -264,10 +255,8 @@ export function AdminOrdersPage() {
       <section className="admin-hero">
         <div>
           <Typography.Text className="eyebrow">公司注册</Typography.Text>
-          <Typography.Title level={2}>客户资料整理</Typography.Title>
-          <Typography.Text type="secondary">
-            客户提交登记信息后，内部在这里补充、修正和归档。
-          </Typography.Text>
+          <Typography.Title level={2}>客户资料</Typography.Title>
+          <Typography.Text type="secondary">选择一条客户记录，先查看提交内容，再进入编辑页完善资料。</Typography.Text>
         </div>
         <Button type="primary" onClick={copyPublicLink}>
           分享客户登记链接
@@ -278,8 +267,8 @@ export function AdminOrdersPage() {
         <Card className="data-card">
           <div className="list-toolbar">
             <div>
-              <Typography.Title level={4}>客户资料</Typography.Title>
-              <Typography.Text type="secondary">打开记录即可完善客户填写内容，确认后归档。</Typography.Text>
+              <Typography.Title level={4}>提交记录</Typography.Title>
+              <Typography.Text type="secondary">列表只负责查看和进入详情，不在这里编辑。</Typography.Text>
             </div>
             <div className="status-segment">
               {statusFilters.map((item) => (
@@ -294,25 +283,43 @@ export function AdminOrdersPage() {
               ))}
             </div>
           </div>
-          {loading ? <div className="empty-follow-list">资料加载中...</div> : renderFollowCards()}
+
+          <div className="follow-feed">
+            {visibleRows.map((row) => (
+              <button className="follow-card" key={row.id} type="button" onClick={() => navigate(`/admin/orders/${row.id}`)}>
+                <span className={`follow-status-dot follow-status-${row.status}`} />
+                <div className="follow-card-body">
+                  <div className="follow-card-top">
+                    <StatusTag status={row.status} />
+                    <span className="follow-time">{displayTime(row.latest_submitted_at)}</span>
+                  </div>
+                  <div className="follow-card-title">{row.company_name || '未填写公司名称'}</div>
+                  <div className="follow-card-meta">
+                    <span>{row.contact_name || '未填写联系人'}</span>
+                    <span>{row.contact_mobile || '暂无电话'}</span>
+                  </div>
+                  {row.remark ? <div className="follow-card-note">{row.remark}</div> : null}
+                </div>
+                <span className="follow-card-arrow">›</span>
+              </button>
+            ))}
+            {!loading && visibleRows.length === 0 ? <div className="empty-follow-list">暂无客户资料</div> : null}
+            {loading ? <div className="empty-follow-list">资料加载中...</div> : null}
+          </div>
         </Card>
 
         <aside className="admin-side">
           <Card className="side-card share-side-card">
-            <div className="side-card-head">
-              <div>
-                <Typography.Text className="eyebrow">客户入口</Typography.Text>
-                <Typography.Title level={5}>分享登记表</Typography.Title>
-              </div>
-            </div>
+            <Typography.Text className="eyebrow">客户入口</Typography.Text>
+            <Typography.Title level={5}>分享登记表</Typography.Title>
             <Typography.Paragraph type="secondary">
-              复制链接后直接发给客户，客户填写完成后会自动出现在左侧列表。
+              复制链接发给客户。客户提交后，这里会自动生成一条记录。
             </Typography.Paragraph>
             <Space.Compact className="share-actions">
               <Button type="primary" onClick={copyPublicLink}>
                 复制链接
               </Button>
-              <Button onClick={openPublicLink}>预览</Button>
+              <Button onClick={() => window.open(publicIntakeLink, '_blank', 'noopener,noreferrer')}>预览</Button>
             </Space.Compact>
           </Card>
 
@@ -335,94 +342,219 @@ export function AdminOrdersPage() {
           </Card>
         </aside>
       </section>
+    </Space>
+  )
+}
 
-      <Drawer
-        title="资料整理"
-        width={720}
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        destroyOnClose
-      >
-        {detail ? (
-          <Space direction="vertical" size="large" className="page-stack">
-            <Descriptions column={1} size="small" bordered className="detail-summary">
-              <Descriptions.Item label="来源">公开填写入口</Descriptions.Item>
-              <Descriptions.Item label="创建时间">{displayTime(detail.created_at)}</Descriptions.Item>
-              <Descriptions.Item label="最近提交">{displayTime(detail.latest_submitted_at)}</Descriptions.Item>
-            </Descriptions>
+export function AdminOrderDetailPage() {
+  const navigate = useNavigate()
+  const { id } = useParams()
+  const [detail, setDetail] = useState<InvitationDetail | null>(null)
+  const [loading, setLoading] = useState(false)
 
-            <Form form={form} layout="vertical" onFinish={saveDetail}>
-              <Form.Item label="整理状态" name="status" rules={[{ required: true }]}>
-                <Select
-                  options={[
-                    { value: 'pending_internal_confirm', label: '待整理' },
-                    { value: 'completed', label: '已归档' },
-                  ]}
-                />
-              </Form.Item>
-              <Form.Item label="内部备注" name="remark">
-                <Input.TextArea rows={3} placeholder="记录资料修正点、缺失项或归档说明" />
-              </Form.Item>
-              <Form.Item label="公司名称" name="full_company_name">
-                <Input />
-              </Form.Item>
-              <Form.Item label="法律地址" name="legal_address">
-                <Input.TextArea rows={2} />
-              </Form.Item>
-              <Form.Item label="股东信息" name="shareholder_note">
-                <Input.TextArea rows={3} />
-              </Form.Item>
-              <Form.Item label="注册资金" name="registered_capital">
-                <Input />
-              </Form.Item>
-              <Form.Item label="总经理/法人代表姓名" name="director_name">
-                <Input />
-              </Form.Item>
-              <Form.Item label="联系电话" name="director_phone">
-                <Input />
-              </Form.Item>
-              <Form.Item label="法人/总经理地址" name="director_address">
-                <Input.TextArea rows={2} />
-              </Form.Item>
-              <Form.Item label="主要经营范围" name="business_scope">
-                <Input.TextArea rows={4} />
-              </Form.Item>
-              <Form.Item label="税务制度" name="tax_regime">
-                <Input />
-              </Form.Item>
-              <Form.Item label="是否需要银行开户" name="need_bank_account">
-                <Select allowClear options={[{ value: '是' }, { value: '否' }]} />
-              </Form.Item>
-              <Form.Item label="是否需要代理记账" name="need_accounting">
-                <Select allowClear options={[{ value: '是' }, { value: '否' }]} />
-              </Form.Item>
-              <Form.Item label="签证" name="visa_type">
-                <Input />
-              </Form.Item>
-              <Form.Item label="填写人姓名" name="name">
-                <Input />
-              </Form.Item>
-              <Form.Item label="填写人联系电话" name="mobile">
-                <Input />
-              </Form.Item>
-              <Space className="drawer-action-row">
-                <Button
-                  onClick={() => {
-                    const values = form.getFieldsValue()
-                    void saveDetail({ ...values, status: 'completed' })
-                  }}
-                  loading={saving}
-                >
-                  保存并归档
-                </Button>
-                <Button type="primary" htmlType="submit" loading={saving}>
-                  保存资料
-                </Button>
-              </Space>
-            </Form>
-          </Space>
-        ) : null}
-      </Drawer>
+  useEffect(() => {
+    if (!id) return
+    setLoading(true)
+    fetchDetail(id)
+      .then(setDetail)
+      .catch((error) => message.error(error instanceof Error ? error.message : '加载资料详情失败'))
+      .finally(() => setLoading(false))
+  }, [id])
+
+  if (loading || !detail) {
+    return <Card className="detail-page-card">资料加载中...</Card>
+  }
+
+  const fields = submittedFields(detail)
+
+  return (
+    <Space direction="vertical" size={20} className="page-stack admin-workspace">
+      <section className="detail-hero">
+        <Button onClick={() => navigate('/admin/orders')}>返回列表</Button>
+        <div>
+          <Typography.Text className="eyebrow">提交信息</Typography.Text>
+          <Typography.Title level={2}>{detail.company_name || '未填写公司名称'}</Typography.Title>
+          <Typography.Text type="secondary">先核对客户提交的信息，再进入编辑页修正和归档。</Typography.Text>
+        </div>
+        <Button type="primary" onClick={() => navigate(`/admin/orders/${detail.id}/edit`)}>
+          编辑资料
+        </Button>
+      </section>
+
+      <Card className="detail-page-card">
+        <div className="detail-summary-grid">
+          <div>
+            <span>状态</span>
+            <StatusTag status={detail.status} />
+          </div>
+          <div>
+            <span>联系人</span>
+            <strong>{detail.contact_name || fieldValue(fields, 'name')}</strong>
+          </div>
+          <div>
+            <span>联系电话</span>
+            <strong>{detail.contact_mobile || fieldValue(fields, 'mobile')}</strong>
+          </div>
+          <div>
+            <span>最近提交</span>
+            <strong>{displayTime(detail.latest_submitted_at)}</strong>
+          </div>
+        </div>
+      </Card>
+
+      {fieldGroups.map((group) => (
+        <Card className="detail-page-card" key={group.title}>
+          <Typography.Title level={4}>{group.title}</Typography.Title>
+          <div className="submitted-field-grid">
+            {group.fields.map(([key, label]) => (
+              <div className="submitted-field" key={key}>
+                <span>{label}</span>
+                <p>{fieldValue(fields, key)}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ))}
+
+      {detail.remark ? (
+        <Card className="detail-page-card">
+          <Typography.Title level={4}>内部备注</Typography.Title>
+          <Typography.Paragraph>{detail.remark}</Typography.Paragraph>
+        </Card>
+      ) : null}
+    </Space>
+  )
+}
+
+export function AdminOrderEditPage() {
+  const navigate = useNavigate()
+  const { id } = useParams()
+  const [detail, setDetail] = useState<InvitationDetail | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [form] = Form.useForm<FollowFormValues>()
+
+  useEffect(() => {
+    if (!id) return
+    fetchDetail(id)
+      .then((data) => {
+        setDetail(data)
+        form.setFieldsValue(toFormValues(data))
+      })
+      .catch((error) => message.error(error instanceof Error ? error.message : '加载资料详情失败'))
+  }, [form, id])
+
+  const saveDetail = async (values: FollowFormValues) => {
+    if (!detail) return
+    setSaving(true)
+    try {
+      const response = await fetch(`/api/admin/invitations/${detail.id}`, {
+        method: 'PATCH',
+        headers: adminHeaders(),
+        body: JSON.stringify({
+          status: values.status,
+          remark: values.remark || null,
+          submitted_fields_json: toSubmittedFields(values),
+        }),
+      })
+      if (!response.ok) throw new Error('保存资料失败')
+      message.success(values.status === 'completed' ? '资料已归档' : '资料已保存')
+      navigate(`/admin/orders/${detail.id}`)
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '保存资料失败')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!detail) {
+    return <Card className="detail-page-card">资料加载中...</Card>
+  }
+
+  return (
+    <Space direction="vertical" size={20} className="page-stack admin-workspace">
+      <section className="detail-hero">
+        <Button onClick={() => navigate(`/admin/orders/${detail.id}`)}>返回详情</Button>
+        <div>
+          <Typography.Text className="eyebrow">内部编辑</Typography.Text>
+          <Typography.Title level={2}>编辑登记信息</Typography.Title>
+          <Typography.Text type="secondary">这里用于修正客户提交内容，确认无误后归档。</Typography.Text>
+        </div>
+        <Button
+          onClick={() => {
+            const values = form.getFieldsValue()
+            void saveDetail({ ...values, status: 'completed' })
+          }}
+          loading={saving}
+        >
+          保存并归档
+        </Button>
+      </section>
+
+      <Card className="edit-page-card">
+        <Form form={form} layout="vertical" onFinish={saveDetail}>
+          <div className="edit-form-grid">
+            <Form.Item label="整理状态" name="status" rules={[{ required: true }]}>
+              <Select
+                options={[
+                  { value: 'pending_internal_confirm', label: '待整理' },
+                  { value: 'completed', label: '已归档' },
+                ]}
+              />
+            </Form.Item>
+            <Form.Item label="填写人姓名" name="name">
+              <Input />
+            </Form.Item>
+            <Form.Item label="填写人联系电话" name="mobile">
+              <Input />
+            </Form.Item>
+            <Form.Item label="公司名称" name="full_company_name">
+              <Input />
+            </Form.Item>
+            <Form.Item label="法律地址" name="legal_address">
+              <Input.TextArea rows={2} />
+            </Form.Item>
+            <Form.Item label="注册资金" name="registered_capital">
+              <Input />
+            </Form.Item>
+            <Form.Item label="总经理/法人代表姓名" name="director_name">
+              <Input />
+            </Form.Item>
+            <Form.Item label="联系电话" name="director_phone">
+              <Input />
+            </Form.Item>
+            <Form.Item label="法人/总经理地址" name="director_address">
+              <Input.TextArea rows={2} />
+            </Form.Item>
+            <Form.Item label="股东信息" name="shareholder_note" className="wide-form-item">
+              <Input.TextArea rows={3} />
+            </Form.Item>
+            <Form.Item label="主要经营范围" name="business_scope" className="wide-form-item">
+              <Input.TextArea rows={4} />
+            </Form.Item>
+            <Form.Item label="税务制度" name="tax_regime">
+              <Input />
+            </Form.Item>
+            <Form.Item label="是否需要银行开户" name="need_bank_account">
+              <Select allowClear options={[{ value: '是' }, { value: '否' }]} />
+            </Form.Item>
+            <Form.Item label="是否需要代理记账" name="need_accounting">
+              <Select allowClear options={[{ value: '是' }, { value: '否' }]} />
+            </Form.Item>
+            <Form.Item label="签证" name="visa_type">
+              <Input />
+            </Form.Item>
+            <Form.Item label="内部备注" name="remark" className="wide-form-item">
+              <Input.TextArea rows={3} placeholder="记录资料修正点、缺失项或归档说明" />
+            </Form.Item>
+          </div>
+          <div className="edit-action-row">
+            <Button onClick={() => navigate(`/admin/orders/${detail.id}`)}>取消</Button>
+            <Button type="primary" htmlType="submit" loading={saving}>
+              保存资料
+            </Button>
+          </div>
+        </Form>
+      </Card>
     </Space>
   )
 }
