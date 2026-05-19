@@ -141,9 +141,9 @@ alembic upgrade head
 WECHAT_MP_APP_ID=你的公众号 AppID
 WECHAT_MP_APP_SECRET=你的公众号 AppSecret
 WECHAT_MP_CALLBACK_BASE_URL=https://你的域名
-WECHAT_SHARE_TITLE=公司注册资料填写
-WECHAT_SHARE_DESC=请按要求填写公司名称、股东、注册资金、经营范围等信息
-WECHAT_SHARE_IMAGE_URL=https://你的域名/wechat-share-v2.png
+WECHAT_SHARE_TITLE=公司注册信息登记
+WECHAT_SHARE_DESC=请按要求补充公司登记所需信息
+WECHAT_SHARE_IMAGE_URL=https://你的域名/wechat-share-v3.png
 ```
 
 公众号后台需要配置：
