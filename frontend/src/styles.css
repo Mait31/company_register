@@ -210,7 +210,7 @@ body {
 .ledger-head,
 .ledger-row {
   display: grid;
-  grid-template-columns: 110px minmax(220px, 1fr) 180px 190px 28px;
+  grid-template-columns: 110px minmax(220px, 1fr) 220px 190px 28px;
   gap: 16px;
   align-items: center;
 }

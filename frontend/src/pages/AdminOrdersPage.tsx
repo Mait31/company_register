@@ -302,8 +302,8 @@ export function AdminOrdersPage() {
           <div className="ledger-list">
             <div className="ledger-head">
               <span>状态</span>
-              <span>公司名称</span>
               <span>联系人</span>
+              <span>公司名称</span>
               <span>最近提交</span>
               <span />
             </div>
@@ -313,10 +313,10 @@ export function AdminOrdersPage() {
                   <StatusTag status={row.status} />
                 </span>
                 <div>
-                  <strong>{row.company_name || '未填写公司名称'}</strong>
+                  <strong>{row.contact_name || row.contact_mobile || '未填写联系人'}</strong>
                   {row.remark ? <em>{row.remark}</em> : null}
                 </div>
-                <span>{row.contact_name || row.contact_mobile || '未填写联系人'}</span>
+                <span>{row.company_name || '未填写公司名称'}</span>
                 <span>{displayTime(row.latest_submitted_at)}</span>
                 <span className="ledger-arrow">›</span>
               </button>
