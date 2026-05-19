@@ -22,9 +22,10 @@ export default function App() {
   return (
     <Layout className="app-shell">
       <Header className="app-header">
-        <div className="brand">公司注册资料系统</div>
+        <Link to="/admin/orders" className="brand">
+          公司注册资料系统
+        </Link>
         <Menu
-          theme="dark"
           mode="horizontal"
           selectedKeys={[location.pathname]}
           items={[

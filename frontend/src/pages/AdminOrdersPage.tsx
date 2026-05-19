@@ -237,10 +237,10 @@ export function AdminOrdersPage() {
   }, [])
 
   return (
-    <Space direction="vertical" size="large" className="page-stack">
-      <div className="page-heading">
+    <Space direction="vertical" size={24} className="page-stack admin-workspace">
+      <div className="admin-hero">
         <div>
-          <Typography.Title level={3}>公司注册资料跟进</Typography.Title>
+          <Typography.Title level={2}>公司注册资料跟进</Typography.Title>
           <Typography.Text type="secondary">
             客户通过固定入口提交资料后，后台自动生成一条跟进记录。
           </Typography.Text>
@@ -249,12 +249,25 @@ export function AdminOrdersPage() {
           复制公开填写入口
         </Button>
       </div>
-      <Card size="small">
-        <Typography.Text type="secondary">公开填写入口：</Typography.Text>
-        <Typography.Text copyable>{publicIntakeLink}</Typography.Text>
+
+      <Card className="intake-card">
+        <Space direction="vertical" size={4}>
+          <Typography.Text className="eyebrow">公开填写入口</Typography.Text>
+          <Typography.Text className="intake-link" copyable>
+            {publicIntakeLink}
+          </Typography.Text>
+        </Space>
       </Card>
-      <Card>
-        <Table columns={columns} dataSource={rows} rowKey="id" loading={loading} />
+
+      <Card className="data-card">
+        <Table
+          columns={columns}
+          dataSource={rows}
+          rowKey="id"
+          loading={loading}
+          pagination={{ pageSize: 10 }}
+          className="follow-table"
+        />
       </Card>
 
       <Drawer
@@ -266,7 +279,7 @@ export function AdminOrdersPage() {
       >
         {detail ? (
           <Space direction="vertical" size="large" className="page-stack">
-            <Descriptions column={1} size="small" bordered>
+            <Descriptions column={1} size="small" bordered className="detail-summary">
               <Descriptions.Item label="来源">公开填写入口</Descriptions.Item>
               <Descriptions.Item label="创建时间">{displayTime(detail.created_at)}</Descriptions.Item>
               <Descriptions.Item label="最近提交">{displayTime(detail.latest_submitted_at)}</Descriptions.Item>

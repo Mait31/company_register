@@ -8,9 +8,8 @@ import {
   Form,
   Input,
   Radio,
-  Space,
+  Result,
   Spin,
-  Steps,
   Typography,
 } from 'antd'
 import { useParams } from 'react-router-dom'
@@ -244,26 +243,22 @@ export function InvitationPage() {
   return (
     <main className="public-page">
       <Card className="public-card">
-        <Typography.Title level={3}>公司注册资料邀请</Typography.Title>
-        <Space direction="vertical" size="small" className="page-stack">
-          <Typography.Text type="secondary">邀请链接：{token}</Typography.Text>
-          {invitation ? (
-            <Typography.Text type="secondary">邀请状态：{invitation.status}</Typography.Text>
-          ) : null}
-          {error ? <Alert type="error" message={error} showIcon /> : null}
-          {savedParticipantId ? (
-            <Alert type="success" message="资料已保存，内部人员确认后会转入正式注册流程。" showIcon />
-          ) : null}
-        </Space>
-        <Steps
-          className="public-steps"
-          current={0}
-          items={[
-            { title: '登记表' },
-            { title: '保存' },
-            { title: '内部确认' },
-          ]}
-        />
+        {savedParticipantId ? (
+          <Result
+            status="success"
+            title="信息已登记"
+            subTitle="我们已收到你的公司注册信息，稍后会有专业人员联系确认。"
+          />
+        ) : null}
+        {!savedParticipantId ? (
+          <>
+            <div className="public-form-heading">
+              <Typography.Title level={2}>公司注册信息登记</Typography.Title>
+              <Typography.Text type="secondary">
+                请按实际情况填写以下信息，用于公司注册资料整理和后续联系确认。
+              </Typography.Text>
+            </div>
+            {error ? <Alert type="error" message={error} showIcon /> : null}
         <Form form={form} layout="vertical" onFinish={submit}>
           <Form.Item
             label="公司名称"
@@ -337,7 +332,7 @@ export function InvitationPage() {
             <Input placeholder="用于内部人员联系确认" />
           </Form.Item>
           <Button type="primary" block htmlType="submit" loading={submitting} disabled={!invitation}>
-            保存邀请资料
+            提交登记信息
           </Button>
         </Form>
         <Collapse
@@ -375,6 +370,8 @@ export function InvitationPage() {
             },
           ]}
         />
+          </>
+        ) : null}
       </Card>
     </main>
   )

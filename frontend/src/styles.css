@@ -6,27 +6,43 @@ body,
 }
 
 body {
-  background: #f5f7fb;
+  background: #f5f5f7;
+  color: #1d1d1f;
 }
 
 .app-shell {
   min-height: 100vh;
+  background: #f5f5f7;
 }
 
 .app-header {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 32px;
+  height: 64px;
+  padding: 0 36px;
+  background: rgba(255, 255, 255, 0.86);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(18px);
 }
 
 .brand {
-  color: #fff;
+  color: #1d1d1f;
   font-weight: 700;
+  font-size: 17px;
   white-space: nowrap;
+  text-decoration: none;
+}
+
+.brand:hover {
+  color: #1d1d1f;
 }
 
 .app-content {
-  padding: 24px;
+  max-width: 1280px;
+  width: 100%;
+  padding: 40px 36px 64px;
+  margin: 0 auto;
 }
 
 .page-stack {
@@ -40,18 +56,103 @@ body {
   gap: 16px;
 }
 
+.admin-workspace .ant-card {
+  border: 0;
+  border-radius: 18px;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.06);
+}
+
+.admin-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 0 4px;
+}
+
+.admin-hero .ant-typography {
+  margin-bottom: 0;
+}
+
+.admin-hero h2.ant-typography {
+  margin: 0 0 8px;
+  font-size: 34px;
+  line-height: 1.18;
+  letter-spacing: 0;
+}
+
+.intake-card .ant-card-body {
+  padding: 20px 24px;
+}
+
+.eyebrow {
+  color: #6e6e73;
+  font-size: 13px;
+}
+
+.intake-link {
+  color: #1d1d1f;
+  font-size: 18px;
+}
+
+.data-card .ant-card-body {
+  padding: 12px;
+}
+
+.follow-table .ant-table {
+  background: transparent;
+}
+
+.follow-table .ant-table-thead > tr > th {
+  background: #fbfbfd;
+  color: #6e6e73;
+  font-weight: 600;
+  border-bottom: 1px solid #ececf0;
+}
+
+.follow-table .ant-table-tbody > tr > td {
+  padding-top: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #f0f0f2;
+}
+
+.detail-summary .ant-descriptions-item-label {
+  width: 120px;
+  color: #6e6e73;
+}
+
 .center-page,
 .public-page {
   min-height: 100vh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 24px;
+  padding: 32px 16px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(0, 113, 227, 0.08), transparent 280px),
+    #f5f5f7;
 }
 
 .login-card,
 .public-card {
-  width: min(100%, 720px);
+  width: min(100%, 760px);
+  border: 0;
+  border-radius: 22px;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.08);
+}
+
+.public-card .ant-card-body {
+  padding: 32px;
+}
+
+.public-form-heading {
+  margin-bottom: 28px;
+}
+
+.public-form-heading h2.ant-typography {
+  margin: 0 0 8px;
+  font-size: 32px;
+  line-height: 1.2;
 }
 
 .public-steps {
@@ -68,7 +169,11 @@ body {
 
 @media (max-width: 640px) {
   .app-header {
-    padding-inline: 12px;
+    height: auto;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px 0;
   }
 
   .brand {
@@ -76,16 +181,27 @@ body {
   }
 
   .app-content {
-    padding: 12px;
+    padding: 20px 12px 40px;
   }
 
-  .page-heading {
+  .page-heading,
+  .admin-hero {
     flex-direction: column;
+    align-items: stretch;
   }
 
   .center-page,
   .public-page {
     align-items: flex-start;
     padding: 12px;
+  }
+
+  .public-card .ant-card-body {
+    padding: 22px;
+  }
+
+  .admin-hero h2.ant-typography,
+  .public-form-heading h2.ant-typography {
+    font-size: 28px;
   }
 }
