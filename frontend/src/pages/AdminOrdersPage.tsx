@@ -251,25 +251,39 @@ export function AdminOrdersPage() {
   }, [])
 
   return (
-    <Space direction="vertical" size={24} className="page-stack admin-workspace">
+    <Space direction="vertical" size={22} className="page-stack admin-workspace">
       <section className="admin-hero">
         <div>
           <Typography.Text className="eyebrow">公司注册</Typography.Text>
-          <Typography.Title level={2}>客户资料</Typography.Title>
-          <Typography.Text type="secondary">选择一条客户记录，先查看提交内容，再进入编辑页完善资料。</Typography.Text>
+          <Typography.Title level={2}>资料台账</Typography.Title>
+          <Typography.Text type="secondary">客户提交后进入台账。点击记录查看提交信息，再进入编辑页完善资料。</Typography.Text>
         </div>
-        <Button type="primary" onClick={copyPublicLink}>
-          分享客户登记链接
-        </Button>
+        <Space>
+          <Button onClick={() => window.open(publicIntakeLink, '_blank', 'noopener,noreferrer')}>预览登记表</Button>
+          <Button type="primary" onClick={copyPublicLink}>
+            分享登记链接
+          </Button>
+        </Space>
       </section>
 
-      <section className="admin-board">
-        <Card className="data-card">
-          <div className="list-toolbar">
-            <div>
-              <Typography.Title level={4}>提交记录</Typography.Title>
-              <Typography.Text type="secondary">列表只负责查看和进入详情，不在这里编辑。</Typography.Text>
-            </div>
+      <section className="ledger-shell">
+        <div className="ledger-summary">
+          <button type="button" onClick={() => setStatusFilter('all')}>
+            <span>全部资料</span>
+            <strong>{summary.total}</strong>
+          </button>
+          <button type="button" onClick={() => setStatusFilter('pending_internal_confirm')}>
+            <span>待整理</span>
+            <strong>{summary.pending}</strong>
+          </button>
+          <button type="button" onClick={() => setStatusFilter('completed')}>
+            <span>已归档</span>
+            <strong>{summary.completed}</strong>
+          </button>
+        </div>
+
+        <Card className="ledger-card">
+          <div className="ledger-toolbar">
             <div className="status-segment">
               {statusFilters.map((item) => (
                 <button
@@ -282,65 +296,35 @@ export function AdminOrdersPage() {
                 </button>
               ))}
             </div>
+            <Typography.Text type="secondary">共 {visibleRows.length} 条</Typography.Text>
           </div>
 
-          <div className="follow-feed">
+          <div className="ledger-list">
+            <div className="ledger-head">
+              <span>状态</span>
+              <span>公司名称</span>
+              <span>联系人</span>
+              <span>最近提交</span>
+              <span />
+            </div>
             {visibleRows.map((row) => (
-              <button className="follow-card" key={row.id} type="button" onClick={() => navigate(`/admin/orders/${row.id}`)}>
-                <span className={`follow-status-dot follow-status-${row.status}`} />
-                <div className="follow-card-body">
-                  <div className="follow-card-top">
-                    <StatusTag status={row.status} />
-                    <span className="follow-time">{displayTime(row.latest_submitted_at)}</span>
-                  </div>
-                  <div className="follow-card-title">{row.company_name || '未填写公司名称'}</div>
-                  <div className="follow-card-meta">
-                    <span>{row.contact_name || '未填写联系人'}</span>
-                    <span>{row.contact_mobile || '暂无电话'}</span>
-                  </div>
-                  {row.remark ? <div className="follow-card-note">{row.remark}</div> : null}
+              <button className="ledger-row" key={row.id} type="button" onClick={() => navigate(`/admin/orders/${row.id}`)}>
+                <span>
+                  <StatusTag status={row.status} />
+                </span>
+                <div>
+                  <strong>{row.company_name || '未填写公司名称'}</strong>
+                  {row.remark ? <em>{row.remark}</em> : null}
                 </div>
-                <span className="follow-card-arrow">›</span>
+                <span>{row.contact_name || row.contact_mobile || '未填写联系人'}</span>
+                <span>{displayTime(row.latest_submitted_at)}</span>
+                <span className="ledger-arrow">›</span>
               </button>
             ))}
             {!loading && visibleRows.length === 0 ? <div className="empty-follow-list">暂无客户资料</div> : null}
             {loading ? <div className="empty-follow-list">资料加载中...</div> : null}
           </div>
         </Card>
-
-        <aside className="admin-side">
-          <Card className="side-card share-side-card">
-            <Typography.Text className="eyebrow">客户入口</Typography.Text>
-            <Typography.Title level={5}>分享登记表</Typography.Title>
-            <Typography.Paragraph type="secondary">
-              复制链接发给客户。客户提交后，这里会自动生成一条记录。
-            </Typography.Paragraph>
-            <Space.Compact className="share-actions">
-              <Button type="primary" onClick={copyPublicLink}>
-                复制链接
-              </Button>
-              <Button onClick={() => window.open(publicIntakeLink, '_blank', 'noopener,noreferrer')}>预览</Button>
-            </Space.Compact>
-          </Card>
-
-          <Card className="side-card">
-            <Typography.Text className="eyebrow">资料状态</Typography.Text>
-            <div className="side-metrics">
-              <button type="button" onClick={() => setStatusFilter('pending_internal_confirm')}>
-                <span>待整理</span>
-                <strong>{summary.pending}</strong>
-              </button>
-              <button type="button" onClick={() => setStatusFilter('completed')}>
-                <span>已归档</span>
-                <strong>{summary.completed}</strong>
-              </button>
-              <button type="button" onClick={() => setStatusFilter('all')}>
-                <span>总记录</span>
-                <strong>{summary.total}</strong>
-              </button>
-            </div>
-          </Card>
-        </aside>
       </section>
     </Space>
   )

@@ -29,8 +29,6 @@ body {
   background: rgba(255, 255, 255, 0.82);
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   backdrop-filter: blur(20px);
-  position: sticky;
-  top: 0;
   z-index: 20;
 }
 
@@ -83,9 +81,9 @@ body {
 }
 
 .app-content {
-  max-width: 1180px;
+  max-width: 1160px;
   width: 100%;
-  padding: 36px 32px 64px;
+  padding: 28px 32px 64px;
   margin: 0 auto;
 }
 
@@ -111,7 +109,7 @@ body {
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
-  padding: 10px 0 0;
+  padding: 8px 0 0;
 }
 
 .admin-hero .ant-typography {
@@ -120,18 +118,159 @@ body {
 
 .admin-hero h2.ant-typography {
   margin: 4px 0 8px;
-  font-size: 34px;
+  font-size: 40px;
   line-height: 1.18;
   letter-spacing: 0;
 }
 
-.admin-hero .ant-btn,
-.admin-overview .ant-btn {
+.admin-hero .ant-btn {
   height: 42px;
   padding: 0 18px;
   border-radius: 999px;
   font-weight: 650;
+}
+
+.admin-hero .ant-btn-primary {
   box-shadow: 0 10px 22px rgba(22, 119, 255, 0.2);
+}
+
+.ledger-shell {
+  display: grid;
+  gap: 16px;
+}
+
+.ledger-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ledger-summary button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 78px;
+  padding: 18px 22px;
+  color: inherit;
+  text-align: left;
+  background: #fff;
+  border: 1px solid #eef0f3;
+  border-radius: 22px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.ledger-summary button:hover {
+  border-color: #d9e6ff;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.09);
+  transform: translateY(-1px);
+}
+
+.ledger-summary span {
+  color: #6e6e73;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.ledger-summary strong {
+  color: #111827;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.ledger-card {
+  border: 0;
+  border-radius: 24px;
+  box-shadow: 0 18px 46px rgba(15, 23, 42, 0.07);
+}
+
+.ledger-card .ant-card-body {
+  padding: 14px;
+}
+
+.ledger-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 6px 14px;
+}
+
+.ledger-list {
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #eef0f3;
+  border-radius: 18px;
+}
+
+.ledger-head,
+.ledger-row {
+  display: grid;
+  grid-template-columns: 110px minmax(220px, 1fr) 180px 190px 28px;
+  gap: 16px;
+  align-items: center;
+}
+
+.ledger-head {
+  padding: 14px 18px;
+  color: #6e6e73;
+  font-size: 13px;
+  font-weight: 750;
+  background: #f7f8fa;
+  border-bottom: 1px solid #eef0f3;
+}
+
+.ledger-row {
+  width: 100%;
+  min-height: 82px;
+  padding: 16px 18px;
+  color: inherit;
+  text-align: left;
+  background: #fff;
+  border: 0;
+  border-bottom: 1px solid #f0f1f3;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    transform 0.18s ease;
+}
+
+.ledger-row:hover {
+  background: #fbfcff;
+}
+
+.ledger-row:last-child {
+  border-bottom: 0;
+}
+
+.ledger-row strong {
+  display: block;
+  color: #111827;
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.ledger-row em {
+  display: block;
+  margin-top: 4px;
+  color: #6e6e73;
+  font-size: 13px;
+  font-style: normal;
+}
+
+.ledger-row > span {
+  color: #3f3f46;
+  font-size: 14px;
+}
+
+.ledger-arrow {
+  color: #a1a1aa !important;
+  font-size: 24px !important;
+  line-height: 1;
 }
 
 .admin-overview {
@@ -765,12 +904,59 @@ body {
     font-size: 30px;
   }
 
+  .admin-hero .ant-space {
+    width: 100%;
+  }
+
+  .admin-hero .ant-space-item {
+    flex: 1;
+  }
+
   .admin-hero {
     padding-top: 0;
   }
 
   .admin-hero .ant-btn {
     width: 100%;
+  }
+
+  .ledger-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .ledger-head {
+    display: none;
+  }
+
+  .ledger-card .ant-card-body {
+    padding: 8px;
+  }
+
+  .ledger-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ledger-row {
+    grid-template-columns: 1fr 24px;
+    gap: 8px;
+    min-height: 106px;
+    padding: 16px;
+  }
+
+  .ledger-row > span:first-child,
+  .ledger-row > span:nth-child(4) {
+    grid-column: 1 / 2;
+  }
+
+  .ledger-row > div,
+  .ledger-row > span:nth-child(3) {
+    grid-column: 1 / 2;
+  }
+
+  .ledger-arrow {
+    grid-row: 1 / 4;
+    grid-column: 2 / 3;
   }
 
   .admin-overview {
