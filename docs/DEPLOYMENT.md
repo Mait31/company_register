@@ -143,7 +143,7 @@ WECHAT_MP_APP_SECRET=你的公众号 AppSecret
 WECHAT_MP_CALLBACK_BASE_URL=https://你的域名
 WECHAT_SHARE_TITLE=公司注册资料填写
 WECHAT_SHARE_DESC=请按要求填写公司名称、股东、注册资金、经营范围等信息
-WECHAT_SHARE_IMAGE_URL=https://你的域名/wechat-share.png
+WECHAT_SHARE_IMAGE_URL=https://你的域名/wechat-share-v2.png
 ```
 
 公众号后台需要配置：
