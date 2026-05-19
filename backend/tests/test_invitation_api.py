@@ -66,3 +66,82 @@ def test_invitation_entry_saves_participant_fields() -> None:
         assert submitted.json()["participant_id"] > 0
     finally:
         app.dependency_overrides.clear()
+
+
+def test_admin_can_track_and_update_invitation_submission() -> None:
+    client = make_client()
+    try:
+        created = client.post("/api/admin/invitations", json={"remark": "跟进客户"})
+        assert created.status_code == 200
+        invitation = created.json()
+        token = invitation["token"]
+
+        submitted = client.post(
+            f"/api/invitations/{token}/participants",
+            json={
+                "role": "customer",
+                "name": "李四",
+                "mobile": "13900000000",
+                "full_company_name": "测试贸易有限公司",
+                "registered_capital": "200000 USD",
+                "need_bank_account": True,
+            },
+        )
+        assert submitted.status_code == 200
+
+        listed = client.get("/api/admin/invitations")
+        assert listed.status_code == 200
+        first = listed.json()[0]
+        assert first["status"] == "pending_internal_confirm"
+        assert first["company_name"] == "测试贸易有限公司"
+        assert first["contact_name"] == "李四"
+
+        updated = client.patch(
+            f"/api/admin/invitations/{invitation['id']}",
+            json={
+                "status": "processing",
+                "remark": "资料已确认，开始办理",
+                "submitted_fields_json": {
+                    "name": "李四",
+                    "mobile": "13900000000",
+                    "full_company_name": "测试贸易有限公司",
+                    "registered_capital": "300000 USD",
+                },
+            },
+        )
+        assert updated.status_code == 200
+        detail = updated.json()
+        assert detail["status"] == "processing"
+        assert detail["remark"] == "资料已确认，开始办理"
+        assert detail["participants"][0]["submitted_fields_json"]["registered_capital"] == "300000 USD"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_public_intake_submission_creates_admin_record() -> None:
+    client = make_client()
+    try:
+        entry = client.get("/api/invitations/company-registration")
+        assert entry.status_code == 200
+        assert entry.json()["token"] == "company-registration"
+
+        submitted = client.post(
+            "/api/invitations/company-registration/participants",
+            json={
+                "role": "customer",
+                "name": "王五",
+                "mobile": "13700000000",
+                "full_company_name": "公开入口公司",
+            },
+        )
+        assert submitted.status_code == 200
+
+        listed = client.get("/api/admin/invitations")
+        assert listed.status_code == 200
+        rows = listed.json()
+        assert rows[0]["status"] == "pending_internal_confirm"
+        assert rows[0]["company_name"] == "公开入口公司"
+        assert rows[0]["contact_name"] == "王五"
+        assert rows[0]["token"] != "company-registration"
+    finally:
+        app.dependency_overrides.clear()

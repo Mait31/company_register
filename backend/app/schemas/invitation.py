@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -48,3 +49,48 @@ class ParticipantCreate(BaseModel):
 
 class ParticipantRead(BaseModel):
     participant_id: int
+
+
+InvitationFollowStatus = Literal[
+    "waiting_customer",
+    "pending_internal_confirm",
+    "processing",
+    "completed",
+]
+
+
+class InvitationParticipantDetail(BaseModel):
+    id: int
+    role: str
+    name: str | None
+    mobile: str | None
+    submitted_fields_json: dict[str, Any] | None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class AdminInvitationListItem(BaseModel):
+    id: int
+    token: str
+    status: str
+    remark: str | None
+    company_name: str | None
+    contact_name: str | None
+    contact_mobile: str | None
+    latest_submitted_at: datetime | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class AdminInvitationDetail(AdminInvitationListItem):
+    allow_forward: bool
+    expires_at: datetime | None
+    participants: list[InvitationParticipantDetail]
+
+
+class AdminInvitationUpdate(BaseModel):
+    status: InvitationFollowStatus | None = None
+    remark: str | None = None
+    submitted_fields_json: dict[str, Any] | None = None
