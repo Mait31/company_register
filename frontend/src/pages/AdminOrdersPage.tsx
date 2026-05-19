@@ -50,11 +50,11 @@ type FollowFormValues = {
 }
 
 const statusText: Record<string, string> = {
-  waiting_customer: '待客户填写',
-  pending_internal_confirm: '待内部确认',
-  processing: '办理中',
-  completed: '已完成',
-  draft: '待客户填写',
+  waiting_customer: '待填写',
+  pending_internal_confirm: '待整理',
+  processing: '待整理',
+  completed: '已归档',
+  draft: '待填写',
 }
 
 const statusColor: Record<string, string> = {
@@ -65,13 +65,12 @@ const statusColor: Record<string, string> = {
   draft: 'default',
 }
 
-const statusOrder = ['pending_internal_confirm', 'processing', 'completed', 'waiting_customer']
+const statusOrder = ['pending_internal_confirm', 'processing', 'waiting_customer', 'completed']
 
 const statusFilters = [
   { value: 'all', label: '全部' },
-  { value: 'pending_internal_confirm', label: '待确认' },
-  { value: 'processing', label: '办理中' },
-  { value: 'completed', label: '已完成' },
+  { value: 'pending_internal_confirm', label: '待整理' },
+  { value: 'completed', label: '已归档' },
 ]
 
 function adminHeaders() {
@@ -101,7 +100,7 @@ function textToBool(value?: string) {
 function toFormValues(detail: InvitationDetail): FollowFormValues {
   const fields = detail.participants[0]?.submitted_fields_json || {}
   return {
-    status: detail.status === 'draft' ? 'waiting_customer' : detail.status,
+    status: detail.status === 'completed' ? 'completed' : 'pending_internal_confirm',
     remark: detail.remark || undefined,
     full_company_name: String(fields.full_company_name || ''),
     legal_address: String(fields.legal_address || ''),
@@ -208,13 +207,17 @@ export function AdminOrdersPage() {
 
   const summary = {
     total: rows.length,
-    pending: rows.filter((row) => row.status === 'pending_internal_confirm').length,
-    processing: rows.filter((row) => row.status === 'processing').length,
+    active: rows.filter((row) => row.status !== 'completed').length,
+    pending: rows.filter((row) => row.status === 'pending_internal_confirm' || row.status === 'processing').length,
     completed: rows.filter((row) => row.status === 'completed').length,
   }
 
   const visibleRows = rows
-    .filter((row) => statusFilter === 'all' || row.status === statusFilter)
+    .filter((row) => {
+      if (statusFilter === 'all') return true
+      if (statusFilter === 'pending_internal_confirm') return row.status !== 'completed'
+      return row.status === statusFilter
+    })
     .sort((a, b) => {
       const aRank = statusOrder.includes(a.status) ? statusOrder.indexOf(a.status) : statusOrder.length
       const bRank = statusOrder.includes(b.status) ? statusOrder.indexOf(b.status) : statusOrder.length
@@ -258,40 +261,48 @@ export function AdminOrdersPage() {
       <section className="admin-hero">
         <div>
           <Typography.Text className="eyebrow">公司注册</Typography.Text>
-          <Typography.Title level={2}>资料收件箱</Typography.Title>
+          <Typography.Title level={2}>客户资料整理</Typography.Title>
           <Typography.Text type="secondary">
-            客户提交后会自动进入这里，内部只需要确认资料、备注下一步并推进状态。
+            客户提交登记信息后，内部在这里补充、修正和归档。
           </Typography.Text>
+          <div className="workflow-line">
+            <span>客户提交</span>
+            <span>内部完善</span>
+            <span>归档</span>
+          </div>
         </div>
         <Button type="primary" onClick={copyPublicLink}>
           复制客户登记入口
         </Button>
       </section>
 
-      <section className="admin-overview">
-        <Card className="intake-card">
-          <Space direction="vertical" size={10} className="intake-card-content">
-            <Typography.Text className="eyebrow">客户登记入口</Typography.Text>
-            <Typography.Text className="intake-link" copyable>
-              {publicIntakeLink}
-            </Typography.Text>
-          </Space>
+      <section className="admin-overview compact-overview">
+        <Card className="intake-card compact-intake-card">
+          <div className="compact-link-row">
+            <div>
+              <Typography.Text className="eyebrow">固定入口</Typography.Text>
+              <Typography.Text className="compact-link" copyable>
+                {publicIntakeLink}
+              </Typography.Text>
+            </div>
+            <Button onClick={copyPublicLink}>复制</Button>
+          </div>
         </Card>
         <div className="metric-grid">
           <Card className="metric-card">
-            <span>待确认</span>
+            <span>待整理</span>
             <strong>{summary.pending}</strong>
           </Card>
           <Card className="metric-card">
-            <span>办理中</span>
-            <strong>{summary.processing}</strong>
-          </Card>
-          <Card className="metric-card">
-            <span>已完成</span>
+            <span>已归档</span>
             <strong>{summary.completed}</strong>
           </Card>
           <Card className="metric-card">
-            <span>全部资料</span>
+            <span>进行中</span>
+            <strong>{summary.active}</strong>
+          </Card>
+          <Card className="metric-card">
+            <span>总记录</span>
             <strong>{summary.total}</strong>
           </Card>
         </div>
@@ -301,7 +312,7 @@ export function AdminOrdersPage() {
         <div className="list-toolbar">
           <div>
             <Typography.Title level={4}>客户资料</Typography.Title>
-            <Typography.Text type="secondary">按最新提交和处理状态排序</Typography.Text>
+            <Typography.Text type="secondary">打开记录即可完善客户填写内容，确认后归档。</Typography.Text>
           </div>
           <div className="status-segment">
             {statusFilters.map((item) => (
@@ -320,7 +331,7 @@ export function AdminOrdersPage() {
       </Card>
 
       <Drawer
-        title="客户资料"
+        title="资料整理"
         width={720}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
@@ -335,18 +346,16 @@ export function AdminOrdersPage() {
             </Descriptions>
 
             <Form form={form} layout="vertical" onFinish={saveDetail}>
-              <Form.Item label="跟进状态" name="status" rules={[{ required: true }]}>
+              <Form.Item label="整理状态" name="status" rules={[{ required: true }]}>
                 <Select
                   options={[
-                    { value: 'waiting_customer', label: '待客户填写' },
-                    { value: 'pending_internal_confirm', label: '待内部确认' },
-                    { value: 'processing', label: '办理中' },
-                    { value: 'completed', label: '已完成' },
+                    { value: 'pending_internal_confirm', label: '待整理' },
+                    { value: 'completed', label: '已归档' },
                   ]}
                 />
               </Form.Item>
               <Form.Item label="内部备注" name="remark">
-                <Input.TextArea rows={3} placeholder="记录内部跟进情况，例如缺什么、谁负责、下一步做什么" />
+                <Input.TextArea rows={3} placeholder="记录资料修正点、缺失项或归档说明" />
               </Form.Item>
               <Form.Item label="公司名称" name="full_company_name">
                 <Input />
@@ -390,9 +399,20 @@ export function AdminOrdersPage() {
               <Form.Item label="填写人联系电话" name="mobile">
                 <Input />
               </Form.Item>
-              <Button type="primary" htmlType="submit" loading={saving} block>
-                保存内部修改
-              </Button>
+              <Space className="drawer-action-row">
+                <Button
+                  onClick={() => {
+                    const values = form.getFieldsValue()
+                    void saveDetail({ ...values, status: 'completed' })
+                  }}
+                  loading={saving}
+                >
+                  保存并归档
+                </Button>
+                <Button type="primary" htmlType="submit" loading={saving}>
+                  保存资料
+                </Button>
+              </Space>
             </Form>
           </Space>
         ) : null}

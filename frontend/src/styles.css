@@ -140,11 +140,33 @@ body {
   gap: 18px;
 }
 
+.compact-overview {
+  grid-template-columns: minmax(0, 1fr) 420px;
+  align-items: stretch;
+}
+
 .intake-card .ant-card-body {
   min-height: 116px;
   display: flex;
   align-items: center;
   padding: 24px 28px;
+}
+
+.compact-intake-card .ant-card-body {
+  min-height: 84px;
+  padding: 20px 22px;
+}
+
+.compact-link-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+}
+
+.compact-link-row .ant-btn {
+  border-radius: 999px;
 }
 
 .eyebrow {
@@ -160,6 +182,35 @@ body {
   font-weight: 720;
   line-height: 1.35;
   word-break: break-all;
+}
+
+.compact-link {
+  display: block;
+  margin-top: 6px;
+  color: #3f3f46;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.35;
+  word-break: break-all;
+}
+
+.workflow-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.workflow-line span {
+  position: relative;
+  padding: 8px 12px;
+  color: #3f3f46;
+  font-size: 13px;
+  font-weight: 700;
+  background: #fff;
+  border: 1px solid #e7e8ec;
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
 }
 
 .metric-grid {
@@ -389,6 +440,19 @@ body {
   border-radius: 12px;
 }
 
+.drawer-action-row {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.drawer-action-row .ant-btn {
+  min-width: 132px;
+  height: 42px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
 .center-page,
 .public-page {
   min-height: 100vh;
@@ -496,6 +560,10 @@ body {
     grid-template-columns: 1fr;
   }
 
+  .compact-overview {
+    grid-template-columns: 1fr;
+  }
+
   .intake-card .ant-card-body {
     min-height: auto;
     padding: 20px;
@@ -503,6 +571,11 @@ body {
 
   .intake-link {
     font-size: 18px;
+  }
+
+  .compact-link-row {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .metric-grid {

@@ -1,5 +1,5 @@
 import { Layout } from 'antd'
-import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AdminOrdersPage } from './pages/AdminOrdersPage'
 import { InvitationPage } from './pages/InvitationPage'
 import { LoginPage } from './pages/LoginPage'
@@ -22,23 +22,12 @@ export default function App() {
   return (
     <Layout className="app-shell">
       <Header className="app-header">
-        <Link to="/admin/orders" className="brand">
-          公司注册资料系统
-        </Link>
-        <nav className="app-nav">
-          <Link className={location.pathname === '/admin/orders' ? 'active' : ''} to="/admin/orders">
-            资料跟进
-          </Link>
-          <Link className={location.pathname === '/admin/companies' ? 'active' : ''} to="/admin/companies">
-            公司档案
-          </Link>
-        </nav>
+        <div className="brand">公司注册资料系统</div>
       </Header>
       <Content className="app-content">
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/admin/orders" element={<AdminOrdersPage />} />
-          <Route path="/admin/companies" element={<div>公司档案列表待实现</div>} />
           <Route path="*" element={<Navigate to="/admin/orders" replace />} />
         </Routes>
       </Content>
