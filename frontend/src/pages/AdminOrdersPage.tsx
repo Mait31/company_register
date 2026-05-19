@@ -207,7 +207,6 @@ export function AdminOrdersPage() {
 
   const summary = {
     total: rows.length,
-    active: rows.filter((row) => row.status !== 'completed').length,
     pending: rows.filter((row) => row.status === 'pending_internal_confirm' || row.status === 'processing').length,
     completed: rows.filter((row) => row.status === 'completed').length,
   }
@@ -265,70 +264,77 @@ export function AdminOrdersPage() {
           <Typography.Text type="secondary">
             客户提交登记信息后，内部在这里补充、修正和归档。
           </Typography.Text>
-          <div className="workflow-line">
-            <span>客户提交</span>
-            <span>内部完善</span>
-            <span>归档</span>
-          </div>
         </div>
         <Button type="primary" onClick={copyPublicLink}>
           复制客户登记入口
         </Button>
       </section>
 
-      <section className="admin-overview compact-overview">
-        <Card className="intake-card compact-intake-card">
-          <div className="compact-link-row">
+      <section className="admin-board">
+        <Card className="data-card">
+          <div className="list-toolbar">
             <div>
-              <Typography.Text className="eyebrow">固定入口</Typography.Text>
-              <Typography.Text className="compact-link" copyable>
-                {publicIntakeLink}
-              </Typography.Text>
+              <Typography.Title level={4}>客户资料</Typography.Title>
+              <Typography.Text type="secondary">打开记录即可完善客户填写内容，确认后归档。</Typography.Text>
             </div>
-            <Button onClick={copyPublicLink}>复制</Button>
+            <div className="status-segment">
+              {statusFilters.map((item) => (
+                <button
+                  className={statusFilter === item.value ? 'active' : ''}
+                  key={item.value}
+                  type="button"
+                  onClick={() => setStatusFilter(item.value)}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
           </div>
+          {loading ? <div className="empty-follow-list">资料加载中...</div> : renderFollowCards()}
         </Card>
-        <div className="metric-grid">
-          <Card className="metric-card">
-            <span>待整理</span>
-            <strong>{summary.pending}</strong>
-          </Card>
-          <Card className="metric-card">
-            <span>已归档</span>
-            <strong>{summary.completed}</strong>
-          </Card>
-          <Card className="metric-card">
-            <span>进行中</span>
-            <strong>{summary.active}</strong>
-          </Card>
-          <Card className="metric-card">
-            <span>总记录</span>
-            <strong>{summary.total}</strong>
-          </Card>
-        </div>
-      </section>
 
-      <Card className="data-card">
-        <div className="list-toolbar">
-          <div>
-            <Typography.Title level={4}>客户资料</Typography.Title>
-            <Typography.Text type="secondary">打开记录即可完善客户填写内容，确认后归档。</Typography.Text>
-          </div>
-          <div className="status-segment">
-            {statusFilters.map((item) => (
-              <button
-                className={statusFilter === item.value ? 'active' : ''}
-                key={item.value}
-                type="button"
-                onClick={() => setStatusFilter(item.value)}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        {loading ? <div className="empty-follow-list">资料加载中...</div> : renderFollowCards()}
-      </Card>
+        <aside className="admin-side">
+          <Card className="side-card intake-side-card">
+            <div className="side-card-head">
+              <div>
+                <Typography.Text className="eyebrow">固定入口</Typography.Text>
+                <Typography.Title level={5}>客户登记链接</Typography.Title>
+              </div>
+              <Button onClick={copyPublicLink}>复制</Button>
+            </div>
+            <Typography.Text className="compact-link" copyable>
+              {publicIntakeLink}
+            </Typography.Text>
+          </Card>
+
+          <Card className="side-card">
+            <Typography.Text className="eyebrow">资料状态</Typography.Text>
+            <div className="side-metrics">
+              <div>
+                <span>待整理</span>
+                <strong>{summary.pending}</strong>
+              </div>
+              <div>
+                <span>已归档</span>
+                <strong>{summary.completed}</strong>
+              </div>
+              <div>
+                <span>总记录</span>
+                <strong>{summary.total}</strong>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="side-card process-card">
+            <Typography.Text className="eyebrow">当前流程</Typography.Text>
+            <ol>
+              <li>客户填写登记表</li>
+              <li>内部完善资料</li>
+              <li>确认后归档</li>
+            </ol>
+          </Card>
+        </aside>
+      </section>
 
       <Drawer
         title="资料整理"

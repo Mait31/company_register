@@ -120,7 +120,7 @@ body {
 
 .admin-hero h2.ant-typography {
   margin: 4px 0 8px;
-  font-size: 36px;
+  font-size: 34px;
   line-height: 1.18;
   letter-spacing: 0;
 }
@@ -143,6 +143,74 @@ body {
 .compact-overview {
   grid-template-columns: minmax(0, 1fr) 420px;
   align-items: stretch;
+}
+
+.admin-board {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 18px;
+  align-items: start;
+}
+
+.admin-side {
+  display: grid;
+  gap: 14px;
+}
+
+.side-card .ant-card-body {
+  padding: 20px;
+}
+
+.side-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.side-card-head h5.ant-typography {
+  margin: 5px 0 0;
+  font-size: 17px;
+}
+
+.side-card-head .ant-btn {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.side-metrics {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.side-metrics div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-top: 1px solid #eef0f3;
+}
+
+.side-metrics span {
+  color: #6e6e73;
+  font-weight: 700;
+}
+
+.side-metrics strong {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.process-card ol {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding-left: 20px;
+  color: #3f3f46;
+  font-weight: 650;
 }
 
 .intake-card .ant-card-body {
@@ -240,7 +308,7 @@ body {
 }
 
 .data-card .ant-card-body {
-  padding: 10px;
+  padding: 12px;
 }
 
 .list-toolbar {
@@ -289,7 +357,7 @@ body {
 
 .follow-feed {
   display: grid;
-  gap: 10px;
+  gap: 12px;
   padding: 6px;
 }
 
@@ -299,13 +367,13 @@ body {
   align-items: center;
   gap: 16px;
   width: 100%;
-  min-height: 118px;
+  min-height: 112px;
   padding: 18px;
   color: inherit;
   text-align: left;
   background: #fff;
   border: 1px solid #eef0f3;
-  border-radius: 18px;
+  border-radius: 20px;
   cursor: pointer;
   transition:
     border-color 0.18s ease,
@@ -562,6 +630,14 @@ body {
 
   .compact-overview {
     grid-template-columns: 1fr;
+  }
+
+  .admin-board {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-side {
+    order: -1;
   }
 
   .intake-card .ant-card-body {
