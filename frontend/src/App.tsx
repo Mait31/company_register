@@ -1,4 +1,4 @@
-import { Layout, Menu } from 'antd'
+import { Layout } from 'antd'
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AdminOrdersPage } from './pages/AdminOrdersPage'
 import { InvitationPage } from './pages/InvitationPage'
@@ -25,14 +25,14 @@ export default function App() {
         <Link to="/admin/orders" className="brand">
           公司注册资料系统
         </Link>
-        <Menu
-          mode="horizontal"
-          selectedKeys={[location.pathname]}
-          items={[
-            { key: '/admin/orders', label: <Link to="/admin/orders">资料跟进</Link> },
-            { key: '/admin/companies', label: <Link to="/admin/companies">公司档案</Link> },
-          ]}
-        />
+        <nav className="app-nav">
+          <Link className={location.pathname === '/admin/orders' ? 'active' : ''} to="/admin/orders">
+            资料跟进
+          </Link>
+          <Link className={location.pathname === '/admin/companies' ? 'active' : ''} to="/admin/companies">
+            公司档案
+          </Link>
+        </nav>
       </Header>
       <Content className="app-content">
         <Routes>

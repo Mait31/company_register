@@ -1,4 +1,4 @@
-import { Button, Card, Descriptions, Drawer, Form, Input, Select, Space, Table, Tag, Typography, message } from 'antd'
+import { Button, Card, Descriptions, Drawer, Form, Input, Select, Space, Tag, Typography, message } from 'antd'
 import { useEffect, useState } from 'react'
 
 type InvitationListItem = {
@@ -64,6 +64,15 @@ const statusColor: Record<string, string> = {
   completed: 'green',
   draft: 'default',
 }
+
+const statusOrder = ['pending_internal_confirm', 'processing', 'completed', 'waiting_customer']
+
+const statusFilters = [
+  { value: 'all', label: '全部' },
+  { value: 'pending_internal_confirm', label: '待确认' },
+  { value: 'processing', label: '办理中' },
+  { value: 'completed', label: '已完成' },
+]
 
 function adminHeaders() {
   return {
@@ -132,6 +141,7 @@ function toSubmittedFields(values: FollowFormValues) {
 
 export function AdminOrdersPage() {
   const [rows, setRows] = useState<InvitationListItem[]>([])
+  const [statusFilter, setStatusFilter] = useState('all')
   const [loading, setLoading] = useState(false)
   const [detail, setDetail] = useState<InvitationDetail | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -196,58 +206,45 @@ export function AdminOrdersPage() {
     message.success('公开填写入口已复制')
   }
 
-  const columns = [
-      {
-        title: '状态',
-        dataIndex: 'status',
-        width: 130,
-        render: (status: string) => (
-          <Tag color={statusColor[status] || 'default'}>{statusText[status] || status}</Tag>
-        ),
-      },
-      {
-        title: '公司名称',
-        dataIndex: 'company_name',
-        render: (value: string | null) => value || <Typography.Text type="secondary">未填写</Typography.Text>,
-      },
-      {
-        title: '联系人',
-        render: (_: unknown, row: InvitationListItem) => row.contact_name || row.contact_mobile || '-',
-      },
-      {
-        title: '最近提交',
-        dataIndex: 'latest_submitted_at',
-        render: displayTime,
-      },
-      {
-        title: '操作',
-        width: 100,
-        render: (_: unknown, row: InvitationListItem) => (
-          <Space>
-            <Button type="link" onClick={() => openDetail(row.id)}>
-              详情
-            </Button>
-          </Space>
-        ),
-      },
-    ]
+  const summary = {
+    total: rows.length,
+    pending: rows.filter((row) => row.status === 'pending_internal_confirm').length,
+    processing: rows.filter((row) => row.status === 'processing').length,
+    completed: rows.filter((row) => row.status === 'completed').length,
+  }
 
-  const renderMobileCards = () => (
-    <div className="mobile-follow-list">
-      {rows.map((row) => (
-        <button className="mobile-follow-card" key={row.id} type="button" onClick={() => openDetail(row.id)}>
-          <div className="mobile-card-main">
-            <Tag color={statusColor[row.status] || 'default'}>{statusText[row.status] || row.status}</Tag>
-            <Typography.Text strong>{row.company_name || '未填写公司名称'}</Typography.Text>
+  const visibleRows = rows
+    .filter((row) => statusFilter === 'all' || row.status === statusFilter)
+    .sort((a, b) => {
+      const aRank = statusOrder.includes(a.status) ? statusOrder.indexOf(a.status) : statusOrder.length
+      const bRank = statusOrder.includes(b.status) ? statusOrder.indexOf(b.status) : statusOrder.length
+      const statusDiff = aRank - bRank
+      if (statusDiff !== 0) return statusDiff
+      return new Date(b.latest_submitted_at || b.updated_at).getTime() - new Date(a.latest_submitted_at || a.updated_at).getTime()
+    })
+
+  const renderFollowCards = () => (
+    <div className="follow-feed">
+      {visibleRows.map((row) => (
+        <button className="follow-card" key={row.id} type="button" onClick={() => openDetail(row.id)}>
+          <span className={`follow-status-dot follow-status-${row.status}`} />
+          <div className="follow-card-body">
+            <div className="follow-card-top">
+              <Tag color={statusColor[row.status] || 'default'}>{statusText[row.status] || row.status}</Tag>
+              <span className="follow-time">{displayTime(row.latest_submitted_at)}</span>
+            </div>
+            <div className="follow-card-title">{row.company_name || '未填写公司名称'}</div>
+            <div className="follow-card-meta">
+              <span>{row.contact_name || row.contact_mobile || '未填写联系人'}</span>
+              <span>{row.contact_mobile || '暂无电话'}</span>
+            </div>
+            {row.remark ? <div className="follow-card-note">{row.remark}</div> : null}
           </div>
-          <div className="mobile-card-meta">
-            <span>{row.contact_name || row.contact_mobile || '未填写联系人'}</span>
-            <span>{displayTime(row.latest_submitted_at)}</span>
-          </div>
+          <span className="follow-card-arrow">›</span>
         </button>
       ))}
-      {!loading && rows.length === 0 ? (
-        <div className="empty-mobile-list">暂无客户提交记录</div>
+      {!loading && visibleRows.length === 0 ? (
+        <div className="empty-follow-list">暂无符合条件的客户资料</div>
       ) : null}
     </div>
   )
@@ -258,41 +255,72 @@ export function AdminOrdersPage() {
 
   return (
     <Space direction="vertical" size={24} className="page-stack admin-workspace">
-      <div className="admin-hero">
+      <section className="admin-hero">
         <div>
-          <Typography.Title level={2}>公司注册资料跟进</Typography.Title>
+          <Typography.Text className="eyebrow">公司注册</Typography.Text>
+          <Typography.Title level={2}>资料收件箱</Typography.Title>
           <Typography.Text type="secondary">
-            客户通过固定入口提交资料后，后台自动生成一条跟进记录。
+            客户提交后会自动进入这里，内部只需要确认资料、备注下一步并推进状态。
           </Typography.Text>
         </div>
         <Button type="primary" onClick={copyPublicLink}>
-          复制公开填写入口
+          复制客户登记入口
         </Button>
-      </div>
+      </section>
 
-      <Card className="intake-card">
-        <Space direction="vertical" size={4} className="intake-card-content">
-          <Typography.Text className="eyebrow">公开填写入口</Typography.Text>
-          <Typography.Text className="intake-link" copyable>
-            {publicIntakeLink}
-          </Typography.Text>
-        </Space>
-      </Card>
+      <section className="admin-overview">
+        <Card className="intake-card">
+          <Space direction="vertical" size={10} className="intake-card-content">
+            <Typography.Text className="eyebrow">客户登记入口</Typography.Text>
+            <Typography.Text className="intake-link" copyable>
+              {publicIntakeLink}
+            </Typography.Text>
+          </Space>
+        </Card>
+        <div className="metric-grid">
+          <Card className="metric-card">
+            <span>待确认</span>
+            <strong>{summary.pending}</strong>
+          </Card>
+          <Card className="metric-card">
+            <span>办理中</span>
+            <strong>{summary.processing}</strong>
+          </Card>
+          <Card className="metric-card">
+            <span>已完成</span>
+            <strong>{summary.completed}</strong>
+          </Card>
+          <Card className="metric-card">
+            <span>全部资料</span>
+            <strong>{summary.total}</strong>
+          </Card>
+        </div>
+      </section>
 
       <Card className="data-card">
-        {renderMobileCards()}
-        <Table
-          columns={columns}
-          dataSource={rows}
-          rowKey="id"
-          loading={loading}
-          pagination={{ pageSize: 10 }}
-          className="follow-table"
-        />
+        <div className="list-toolbar">
+          <div>
+            <Typography.Title level={4}>客户资料</Typography.Title>
+            <Typography.Text type="secondary">按最新提交和处理状态排序</Typography.Text>
+          </div>
+          <div className="status-segment">
+            {statusFilters.map((item) => (
+              <button
+                className={statusFilter === item.value ? 'active' : ''}
+                key={item.value}
+                type="button"
+                onClick={() => setStatusFilter(item.value)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {loading ? <div className="empty-follow-list">资料加载中...</div> : renderFollowCards()}
       </Card>
 
       <Drawer
-        title="客户资料详情"
+        title="客户资料"
         width={720}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
