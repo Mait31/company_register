@@ -82,29 +82,9 @@ type ShareOptions = {
   imgUrl: string
 }
 
-type WeChatDebugState = {
-  enabled: boolean
-  steps: string[]
-  signature?: WeChatJsSdkSignature
-  error?: string
-}
-
 declare global {
   interface Window {
     wx?: WeChatJsApi
-  }
-}
-
-function isWechatDebugEnabled() {
-  return new URLSearchParams(window.location.search).get('debug_wechat') === '1'
-}
-
-function stringifyDebugError(error: unknown) {
-  if (error instanceof Error) return error.message
-  try {
-    return JSON.stringify(error)
-  } catch {
-    return String(error)
   }
 }
 
@@ -134,28 +114,24 @@ function loadWechatJsSdk() {
   })
 }
 
-async function setupWechatShare(onDebug?: (state: Partial<WeChatDebugState>) => void) {
-  const debug = isWechatDebugEnabled()
+async function setupWechatShare() {
   const signUrl = window.location.href.split('#')[0]
-  onDebug?.({ steps: [`签名 URL: ${signUrl}`] })
   const response = await fetch(`/api/wechat/js-sdk-signature?url=${encodeURIComponent(signUrl)}`)
   if (!response.ok) {
-    onDebug?.({ error: `签名接口失败: ${response.status}` })
+    console.warn('wechat signature failed', response.status)
     return
   }
 
   const config = (await response.json()) as WeChatJsSdkSignature
-  onDebug?.({ signature: config, steps: [`签名接口返回 enabled=${config.enabled}`] })
   if (!config.enabled || !config.appId || !config.timestamp || !config.nonceStr || !config.signature) {
-    onDebug?.({ error: `JS SDK 未启用: ${config.reason || 'missing config'}` })
+    console.warn('wechat js sdk disabled', config.reason || 'missing config')
     return
   }
 
   await loadWechatJsSdk()
-  onDebug?.({ steps: ['微信 JS SDK 脚本加载完成'] })
   const wx = window.wx
   if (!wx) {
-    onDebug?.({ error: 'window.wx 不存在' })
+    console.warn('window.wx missing')
     return
   }
 
@@ -167,7 +143,7 @@ async function setupWechatShare(onDebug?: (state: Partial<WeChatDebugState>) => 
   }
 
   wx.config({
-    debug,
+    debug: false,
     appId: config.appId,
     timestamp: config.timestamp,
     nonceStr: config.nonceStr,
@@ -179,19 +155,16 @@ async function setupWechatShare(onDebug?: (state: Partial<WeChatDebugState>) => 
       'onMenuShareTimeline',
     ],
   })
-  onDebug?.({ steps: ['wx.config 已调用'] })
 
   wx.ready(() => {
-    onDebug?.({ steps: ['wx.ready 已触发'] })
     wx.updateAppMessageShareData?.(share)
     wx.updateTimelineShareData?.(share)
     wx.onMenuShareAppMessage?.(share)
     wx.onMenuShareTimeline?.(share)
-    onDebug?.({ steps: ['分享配置已写入'] })
   })
 
   wx.error?.((error) => {
-    onDebug?.({ error: `wx.error: ${stringifyDebugError(error)}` })
+    console.warn('wechat config error', error)
   })
 }
 
@@ -203,10 +176,6 @@ export function InvitationPage() {
   const [submitting, setSubmitting] = useState(false)
   const [savedParticipantId, setSavedParticipantId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [wechatDebug, setWechatDebug] = useState<WeChatDebugState>({
-    enabled: isWechatDebugEnabled(),
-    steps: [],
-  })
 
   useEffect(() => {
     async function loadInvitation() {
@@ -231,13 +200,7 @@ export function InvitationPage() {
 
   useEffect(() => {
     if (!token) return
-    void setupWechatShare((partial) => {
-      setWechatDebug((current) => ({
-        ...current,
-        ...partial,
-        steps: [...current.steps, ...(partial.steps || [])],
-      }))
-    })
+    void setupWechatShare()
   }, [token])
 
   const submit = async (values: InvitationFormValues) => {
@@ -290,26 +253,6 @@ export function InvitationPage() {
           {error ? <Alert type="error" message={error} showIcon /> : null}
           {savedParticipantId ? (
             <Alert type="success" message="资料已保存，内部人员确认后会转入正式注册流程。" showIcon />
-          ) : null}
-          {wechatDebug.enabled ? (
-            <Alert
-              type={wechatDebug.error ? 'error' : 'info'}
-              message="微信分享调试"
-              description={
-                <pre className="debug-output">
-                  {JSON.stringify(
-                    {
-                      steps: wechatDebug.steps,
-                      signature: wechatDebug.signature,
-                      error: wechatDebug.error,
-                    },
-                    null,
-                    2,
-                  )}
-                </pre>
-              }
-              showIcon
-            />
           ) : null}
         </Space>
         <Steps
