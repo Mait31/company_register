@@ -232,6 +232,26 @@ export function AdminOrdersPage() {
       },
     ]
 
+  const renderMobileCards = () => (
+    <div className="mobile-follow-list">
+      {rows.map((row) => (
+        <button className="mobile-follow-card" key={row.id} type="button" onClick={() => openDetail(row.id)}>
+          <div className="mobile-card-main">
+            <Tag color={statusColor[row.status] || 'default'}>{statusText[row.status] || row.status}</Tag>
+            <Typography.Text strong>{row.company_name || '未填写公司名称'}</Typography.Text>
+          </div>
+          <div className="mobile-card-meta">
+            <span>{row.contact_name || row.contact_mobile || '未填写联系人'}</span>
+            <span>{displayTime(row.latest_submitted_at)}</span>
+          </div>
+        </button>
+      ))}
+      {!loading && rows.length === 0 ? (
+        <div className="empty-mobile-list">暂无客户提交记录</div>
+      ) : null}
+    </div>
+  )
+
   useEffect(() => {
     void loadRows()
   }, [])
@@ -251,7 +271,7 @@ export function AdminOrdersPage() {
       </div>
 
       <Card className="intake-card">
-        <Space direction="vertical" size={4}>
+        <Space direction="vertical" size={4} className="intake-card-content">
           <Typography.Text className="eyebrow">公开填写入口</Typography.Text>
           <Typography.Text className="intake-link" copyable>
             {publicIntakeLink}
@@ -260,6 +280,7 @@ export function AdminOrdersPage() {
       </Card>
 
       <Card className="data-card">
+        {renderMobileCards()}
         <Table
           columns={columns}
           dataSource={rows}

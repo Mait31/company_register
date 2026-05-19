@@ -99,6 +99,10 @@ body {
   padding: 12px;
 }
 
+.mobile-follow-list {
+  display: none;
+}
+
 .follow-table .ant-table {
   background: transparent;
 }
@@ -180,6 +184,11 @@ body {
     font-size: 14px;
   }
 
+  .app-header .ant-menu {
+    width: 100%;
+    min-width: 0;
+  }
+
   .app-content {
     padding: 20px 12px 40px;
   }
@@ -203,5 +212,63 @@ body {
   .admin-hero h2.ant-typography,
   .public-form-heading h2.ant-typography {
     font-size: 28px;
+  }
+
+  .admin-hero {
+    padding-top: 0;
+  }
+
+  .admin-hero .ant-btn {
+    width: 100%;
+  }
+
+  .intake-card {
+    display: none;
+  }
+
+  .data-card .ant-card-body {
+    padding: 8px;
+  }
+
+  .follow-table {
+    display: none;
+  }
+
+  .mobile-follow-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .mobile-follow-card {
+    width: 100%;
+    padding: 16px;
+    text-align: left;
+    background: #fff;
+    border: 1px solid #ececf0;
+    border-radius: 14px;
+  }
+
+  .mobile-card-main,
+  .mobile-card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .mobile-card-meta {
+    margin-top: 12px;
+    color: #6e6e73;
+    font-size: 13px;
+  }
+
+  .empty-mobile-list {
+    padding: 24px;
+    color: #6e6e73;
+    text-align: center;
+  }
+
+  .ant-drawer-content-wrapper {
+    width: 100% !important;
   }
 }
