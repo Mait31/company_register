@@ -180,18 +180,56 @@ body {
   font-weight: 700;
 }
 
+.share-side-card .ant-typography {
+  margin-bottom: 0;
+}
+
+.share-side-card .ant-typography + .ant-typography {
+  margin-top: 12px;
+}
+
+.share-actions {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.share-actions .ant-btn {
+  height: 40px;
+  font-weight: 700;
+}
+
+.share-actions .ant-btn:first-child {
+  flex: 1;
+}
+
 .side-metrics {
   display: grid;
   gap: 10px;
   margin-top: 14px;
 }
 
-.side-metrics div {
+.side-metrics button {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
   padding: 12px 0;
+  color: inherit;
+  text-align: left;
+  background: transparent;
   border-top: 1px solid #eef0f3;
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 0;
+  cursor: pointer;
+  transition:
+    color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.side-metrics button:hover {
+  color: #1677ff;
+  transform: translateX(2px);
 }
 
 .side-metrics span {

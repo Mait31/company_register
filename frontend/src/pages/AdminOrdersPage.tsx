@@ -202,7 +202,11 @@ export function AdminOrdersPage() {
 
   const copyPublicLink = async () => {
     await navigator.clipboard.writeText(publicIntakeLink)
-    message.success('公开填写入口已复制')
+    message.success('客户登记链接已复制，可直接发给客户')
+  }
+
+  const openPublicLink = () => {
+    window.open(publicIntakeLink, '_blank', 'noopener,noreferrer')
   }
 
   const summary = {
@@ -266,7 +270,7 @@ export function AdminOrdersPage() {
           </Typography.Text>
         </div>
         <Button type="primary" onClick={copyPublicLink}>
-          复制客户登记入口
+          分享客户登记链接
         </Button>
       </section>
 
@@ -294,44 +298,40 @@ export function AdminOrdersPage() {
         </Card>
 
         <aside className="admin-side">
-          <Card className="side-card intake-side-card">
+          <Card className="side-card share-side-card">
             <div className="side-card-head">
               <div>
-                <Typography.Text className="eyebrow">固定入口</Typography.Text>
-                <Typography.Title level={5}>客户登记链接</Typography.Title>
+                <Typography.Text className="eyebrow">客户入口</Typography.Text>
+                <Typography.Title level={5}>分享登记表</Typography.Title>
               </div>
-              <Button onClick={copyPublicLink}>复制</Button>
             </div>
-            <Typography.Text className="compact-link" copyable>
-              {publicIntakeLink}
-            </Typography.Text>
+            <Typography.Paragraph type="secondary">
+              复制链接后直接发给客户，客户填写完成后会自动出现在左侧列表。
+            </Typography.Paragraph>
+            <Space.Compact className="share-actions">
+              <Button type="primary" onClick={copyPublicLink}>
+                复制链接
+              </Button>
+              <Button onClick={openPublicLink}>预览</Button>
+            </Space.Compact>
           </Card>
 
           <Card className="side-card">
             <Typography.Text className="eyebrow">资料状态</Typography.Text>
             <div className="side-metrics">
-              <div>
+              <button type="button" onClick={() => setStatusFilter('pending_internal_confirm')}>
                 <span>待整理</span>
                 <strong>{summary.pending}</strong>
-              </div>
-              <div>
+              </button>
+              <button type="button" onClick={() => setStatusFilter('completed')}>
                 <span>已归档</span>
                 <strong>{summary.completed}</strong>
-              </div>
-              <div>
+              </button>
+              <button type="button" onClick={() => setStatusFilter('all')}>
                 <span>总记录</span>
                 <strong>{summary.total}</strong>
-              </div>
+              </button>
             </div>
-          </Card>
-
-          <Card className="side-card process-card">
-            <Typography.Text className="eyebrow">当前流程</Typography.Text>
-            <ol>
-              <li>客户填写登记表</li>
-              <li>内部完善资料</li>
-              <li>确认后归档</li>
-            </ol>
           </Card>
         </aside>
       </section>
