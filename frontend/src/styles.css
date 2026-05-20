@@ -252,10 +252,6 @@ body {
   font-weight: 700;
 }
 
-.share-actions .ant-btn:first-child {
-  grid-column: 1 / -1;
-}
-
 .ledger-shell {
   display: grid;
   gap: 16px;
@@ -1355,10 +1351,6 @@ body {
 
   .share-actions {
     grid-template-columns: 1fr;
-  }
-
-  .share-actions .ant-btn:first-child {
-    grid-column: auto;
   }
 
   .ledger-summary {

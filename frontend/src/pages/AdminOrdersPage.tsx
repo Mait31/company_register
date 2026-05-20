@@ -223,23 +223,6 @@ export function AdminOrdersPage() {
     message.success('客户登记链接已复制，可直接发给客户')
   }
 
-  const openNativeShare = async () => {
-    if (!navigator.share) {
-      setShareOpen(true)
-      message.info('当前浏览器不支持系统分享，可扫码或复制链接发送')
-      return
-    }
-    try {
-      await navigator.share({
-        title: '公司注册信息登记',
-        text: '请按要求补充公司登记所需信息',
-        url: publicIntakeLink,
-      })
-    } catch {
-      // 用户取消系统分享时不需要提示错误。
-    }
-  }
-
   const summary = {
     total: rows.length,
     pending: rows.filter((row) => row.status !== 'completed').length,
@@ -303,7 +286,7 @@ export function AdminOrdersPage() {
               <img src="/wechat-share.png" alt="公司注册信息登记分享图" />
             </div>
             <Typography.Paragraph type="secondary">
-              客户在微信内打开后再转发，会使用公众号 JS SDK 配置的标题、描述和图片。
+              直接从电脑后台无法强制打开微信好友列表。用手机微信扫码打开后，再点右上角转发，会使用当前卡片样式。
             </Typography.Paragraph>
           </div>
 
@@ -317,7 +300,6 @@ export function AdminOrdersPage() {
               <Button type="primary" onClick={copyPublicLink}>
                 复制链接
               </Button>
-              <Button onClick={openNativeShare}>系统分享</Button>
               <Button onClick={() => window.open(publicIntakeLink, '_blank', 'noopener,noreferrer')}>预览</Button>
             </div>
           </div>
