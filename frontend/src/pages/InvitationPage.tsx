@@ -200,13 +200,6 @@ const faqItems = [
   },
 ]
 
-const fieldGroups = [
-  { key: 'company', label: '公司信息' },
-  { key: 'people', label: '人员与股东' },
-  { key: 'business', label: '经营与税务' },
-  { key: 'contact', label: '提交人' },
-]
-
 export function InvitationPage() {
   const { token } = useParams()
   const [form] = Form.useForm<InvitationFormValues>()
@@ -300,11 +293,6 @@ export function InvitationPage() {
           <Typography.Paragraph>
             请按实际情况填写下方信息。提交后资料会进入内部整理流程，稍后会有专业人员联系确认。
           </Typography.Paragraph>
-        </div>
-        <div className="public-hero-meta" aria-label="登记流程">
-          <span>信息登记</span>
-          <span>内部整理</span>
-          <span>联系确认</span>
         </div>
       </section>
 
@@ -494,17 +482,6 @@ export function InvitationPage() {
         </Card>
 
         <aside className="public-side-panel">
-          <Card className="public-side-card">
-            <Typography.Title level={3}>填写说明</Typography.Title>
-            <div className="public-flow-list">
-              {fieldGroups.map((item, index) => (
-                <div key={item.key}>
-                  <span>{String(index + 1).padStart(2, '0')}</span>
-                  <strong>{item.label}</strong>
-                </div>
-              ))}
-            </div>
-          </Card>
           <Card className="public-side-card">
             <Typography.Title level={3}>常见问题</Typography.Title>
             <Collapse ghost items={faqItems} />
