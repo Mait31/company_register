@@ -1,0 +1,1 @@
+"""Registration back-office module."""
