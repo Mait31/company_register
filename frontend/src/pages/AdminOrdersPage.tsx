@@ -1,4 +1,4 @@
-import { Button, Card, Form, Input, Select, Space, Tag, Typography, message } from 'antd'
+import { Button, Card, Form, Input, Modal, QRCode, Select, Space, Tag, Typography, message } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
@@ -202,6 +202,7 @@ export function AdminOrdersPage() {
   const [rows, setRows] = useState<InvitationListItem[]>([])
   const [statusFilter, setStatusFilter] = useState('all')
   const [loading, setLoading] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
   const publicIntakeLink = `${window.location.origin}/i/company-registration`
 
   const loadRows = async () => {
@@ -220,6 +221,23 @@ export function AdminOrdersPage() {
   const copyPublicLink = async () => {
     await navigator.clipboard.writeText(publicIntakeLink)
     message.success('客户登记链接已复制，可直接发给客户')
+  }
+
+  const openNativeShare = async () => {
+    if (!navigator.share) {
+      setShareOpen(true)
+      message.info('当前浏览器不支持系统分享，可扫码或复制链接发送')
+      return
+    }
+    try {
+      await navigator.share({
+        title: '公司注册信息登记',
+        text: '请按要求补充公司登记所需信息',
+        url: publicIntakeLink,
+      })
+    } catch {
+      // 用户取消系统分享时不需要提示错误。
+    }
   }
 
   const summary = {
@@ -260,11 +278,51 @@ export function AdminOrdersPage() {
         </div>
         <Space>
           <Button onClick={() => window.open(publicIntakeLink, '_blank', 'noopener,noreferrer')}>预览登记表</Button>
-          <Button type="primary" onClick={copyPublicLink}>
+          <Button type="primary" onClick={() => setShareOpen(true)}>
             分享登记链接
           </Button>
         </Space>
       </section>
+
+      <Modal
+        className="share-modal"
+        footer={null}
+        onCancel={() => setShareOpen(false)}
+        open={shareOpen}
+        title="分享客户登记链接"
+        width={720}
+      >
+        <div className="share-modal-grid">
+          <div className="share-preview">
+            <Typography.Text className="share-label">微信卡片预览</Typography.Text>
+            <div className="wechat-card-preview">
+              <div>
+                <strong>公司注册信息登记</strong>
+                <span>请按要求补充公司登记所需信息</span>
+              </div>
+              <img src="/wechat-share.png" alt="公司注册信息登记分享图" />
+            </div>
+            <Typography.Paragraph type="secondary">
+              客户在微信内打开后再转发，会使用公众号 JS SDK 配置的标题、描述和图片。
+            </Typography.Paragraph>
+          </div>
+
+          <div className="share-tools">
+            <Typography.Text className="share-label">发送给客户</Typography.Text>
+            <div className="share-qr-box">
+              <QRCode value={publicIntakeLink} size={152} bordered={false} />
+            </div>
+            <div className="share-link-box">{publicIntakeLink}</div>
+            <div className="share-actions">
+              <Button type="primary" onClick={copyPublicLink}>
+                复制链接
+              </Button>
+              <Button onClick={openNativeShare}>系统分享</Button>
+              <Button onClick={() => window.open(publicIntakeLink, '_blank', 'noopener,noreferrer')}>预览</Button>
+            </div>
+          </div>
+        </div>
+      </Modal>
 
       <section className="ledger-shell">
         <div className="ledger-summary">
