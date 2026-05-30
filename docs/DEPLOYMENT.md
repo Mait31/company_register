@@ -50,6 +50,28 @@ cp deploy/nginx/https.conf.template.example deploy/nginx/templates/https.conf.te
 
 ## 4. 启动
 
+推荐使用部署脚本：
+
+```bash
+sh deploy/scripts/deploy.sh
+```
+
+脚本会自动执行 `git pull --ff-only`，然后构建并启动服务。
+
+如果只更新前端：
+
+```bash
+sh deploy/scripts/deploy.sh frontend
+```
+
+如果只更新后端：
+
+```bash
+sh deploy/scripts/deploy.sh backend
+```
+
+也可以手动执行：
+
 ```bash
 docker compose up -d --build
 ```
@@ -120,6 +142,26 @@ sh deploy/scripts/backup_storage.sh
 ```
 
 ## 7. 更新
+
+推荐：
+
+```bash
+sh deploy/scripts/deploy.sh
+```
+
+只更新前端：
+
+```bash
+sh deploy/scripts/deploy.sh frontend
+```
+
+只更新后端：
+
+```bash
+sh deploy/scripts/deploy.sh backend
+```
+
+手动方式：
 
 ```bash
 docker compose up -d --build
