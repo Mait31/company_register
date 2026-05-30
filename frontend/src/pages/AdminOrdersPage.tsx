@@ -579,18 +579,9 @@ export function AdminOrderDetailPage() {
               <span>客户资料确认后，手动发起护照翻译件、PIN 码、落地签三项材料上传。</span>
             </div>
             <div className="workflow-step-action">
-              {materials?.total ? (
-                <Button onClick={() => setShareOpen(true)}>分享链接</Button>
-              ) : (
-                <Button
-                  type="primary"
-                  disabled={!customerInfoConfirmed}
-                  loading={startingMaterials}
-                  onClick={() => void startMaterials()}
-                >
-                  发起收集
-                </Button>
-              )}
+              <Button disabled className={materials?.total ? 'workflow-state-button is-done' : 'workflow-state-button'}>
+                {materials?.total ? '已发起' : '待发起'}
+              </Button>
             </div>
           </section>
         </div>
