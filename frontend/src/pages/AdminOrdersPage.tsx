@@ -1,5 +1,5 @@
 import { Button, Card, Form, Input, Modal, QRCode, Select, Space, Tag, Typography, message } from 'antd'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 type InvitationListItem = {
@@ -197,12 +197,23 @@ function StatusTag({ status }: { status: string }) {
   return <Tag color={statusColor[status] || 'default'}>{statusText[status] || status}</Tag>
 }
 
+function drawRoundRect(context: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
+  context.beginPath()
+  context.moveTo(x + radius, y)
+  context.arcTo(x + width, y, x + width, y + height, radius)
+  context.arcTo(x + width, y + height, x, y + height, radius)
+  context.arcTo(x, y + height, x, y, radius)
+  context.arcTo(x, y, x + width, y, radius)
+  context.closePath()
+}
+
 export function AdminOrdersPage() {
   const navigate = useNavigate()
   const [rows, setRows] = useState<InvitationListItem[]>([])
   const [statusFilter, setStatusFilter] = useState('all')
   const [loading, setLoading] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
+  const shareQrRef = useRef<HTMLDivElement>(null)
   const publicIntakeLink = `${window.location.origin}/i/company-registration`
 
   const loadRows = async () => {
@@ -218,9 +229,93 @@ export function AdminOrdersPage() {
     }
   }
 
-  const copyPublicLink = async () => {
-    await navigator.clipboard.writeText(publicIntakeLink)
-    message.success('客户登记链接已复制，可直接发给客户')
+  const copyShareImage = async () => {
+    const qrCanvas = shareQrRef.current?.querySelector('canvas')
+    if (!qrCanvas) {
+      message.error('分享二维码还在生成，请稍后再试')
+      return
+    }
+
+    const canvas = document.createElement('canvas')
+    canvas.width = 900
+    canvas.height = 1180
+    const context = canvas.getContext('2d')
+    if (!context) {
+      message.error('当前浏览器无法生成分享图片')
+      return
+    }
+
+    const gradient = context.createLinearGradient(0, 0, 900, 1180)
+    gradient.addColorStop(0, '#eef6ff')
+    gradient.addColorStop(1, '#f8fafc')
+    context.fillStyle = gradient
+    context.fillRect(0, 0, 900, 1180)
+
+    context.fillStyle = '#ffffff'
+    drawRoundRect(context, 70, 70, 760, 1040, 44)
+    context.fill()
+
+    context.fillStyle = '#eff6ff'
+    drawRoundRect(context, 110, 118, 112, 112, 30)
+    context.fill()
+    context.fillStyle = '#2563eb'
+    context.fillRect(140, 150, 52, 8)
+    context.fillStyle = '#93a8c8'
+    context.fillRect(140, 178, 52, 8)
+    context.fillRect(140, 206, 40, 8)
+    context.strokeStyle = '#22c55e'
+    context.lineWidth = 10
+    context.lineCap = 'round'
+    context.beginPath()
+    context.moveTo(178, 244)
+    context.lineTo(202, 268)
+    context.lineTo(244, 218)
+    context.stroke()
+
+    context.fillStyle = '#0f172a'
+    context.font = '700 58px "Segoe UI", sans-serif'
+    context.fillText('公司注册信息登记', 110, 340)
+    context.fillStyle = '#64748b'
+    context.font = '400 32px "Segoe UI", sans-serif'
+    context.fillText('请按要求补充公司登记所需信息', 110, 402)
+
+    context.fillStyle = '#f8fafc'
+    drawRoundRect(context, 150, 500, 600, 600, 36)
+    context.fill()
+    context.fillStyle = '#ffffff'
+    drawRoundRect(context, 190, 540, 520, 520, 28)
+    context.fill()
+    context.drawImage(qrCanvas, 225, 575, 450, 450)
+
+    context.fillStyle = '#0f172a'
+    context.font = '700 34px "Segoe UI", sans-serif'
+    context.textAlign = 'center'
+    context.fillText('微信扫码填写登记信息', 450, 1080)
+    context.textAlign = 'left'
+
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png', 1))
+    if (!blob) {
+      message.error('分享图片生成失败')
+      return
+    }
+
+    try {
+      if (navigator.clipboard && 'ClipboardItem' in window) {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+        message.success('分享图片已复制，可直接粘贴发送给微信好友')
+        return
+      }
+    } catch {
+      // 复制图片能力依赖浏览器权限，失败时走下载兜底。
+    }
+
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'company-registration-share.png'
+    link.click()
+    URL.revokeObjectURL(url)
+    message.info('当前浏览器不支持复制图片，已下载分享图片')
   }
 
   const summary = {
@@ -277,28 +372,34 @@ export function AdminOrdersPage() {
       >
         <div className="share-modal-grid">
           <div className="share-preview">
-            <Typography.Text className="share-label">微信卡片预览</Typography.Text>
-            <div className="wechat-card-preview">
+            <Typography.Text className="share-label">分享图片预览</Typography.Text>
+            <div className="share-poster-preview">
+              <div className="share-poster-icon">
+                <img src="/wechat-share.png" alt="公司注册信息登记" />
+              </div>
               <div>
                 <strong>公司注册信息登记</strong>
                 <span>请按要求补充公司登记所需信息</span>
               </div>
-              <img src="/wechat-share.png" alt="公司注册信息登记分享图" />
+              <div className="share-poster-qr" ref={shareQrRef}>
+                <QRCode value={publicIntakeLink} size={168} bordered={false} type="canvas" />
+              </div>
+              <em>微信扫码填写登记信息</em>
             </div>
             <Typography.Paragraph type="secondary">
-              直接从电脑后台无法强制打开微信好友列表。用手机微信扫码打开后，再点右上角转发，会使用当前卡片样式。
+              复制图片后可直接粘贴发送给微信好友。客户扫码后进入登记表填写资料。
             </Typography.Paragraph>
           </div>
 
           <div className="share-tools">
-            <Typography.Text className="share-label">发送给客户</Typography.Text>
-            <div className="share-qr-box">
-              <QRCode value={publicIntakeLink} size={152} bordered={false} />
+            <Typography.Text className="share-label">发送方式</Typography.Text>
+            <div className="share-method-card">
+              <strong>推荐：复制分享图片</strong>
+              <span>发送到微信后，客户扫码即可打开登记表。</span>
             </div>
-            <div className="share-link-box">{publicIntakeLink}</div>
             <div className="share-actions">
-              <Button type="primary" onClick={copyPublicLink}>
-                复制链接
+              <Button type="primary" onClick={copyShareImage}>
+                复制图片
               </Button>
               <Button onClick={() => window.open(publicIntakeLink, '_blank', 'noopener,noreferrer')}>预览</Button>
             </div>
