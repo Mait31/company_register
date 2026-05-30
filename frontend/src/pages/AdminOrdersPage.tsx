@@ -514,22 +514,6 @@ export function AdminOrderDetailPage() {
 
   const materialLink = detail ? `${window.location.origin}/i/${detail.token}/materials` : ''
 
-  const confirmCustomerInfo = async () => {
-    if (!detail) return
-    try {
-      const response = await fetch(`/api/admin/invitations/${detail.id}`, {
-        method: 'PATCH',
-        headers: adminHeaders(),
-        body: JSON.stringify({ status: 'completed', remark: detail.remark || null }),
-      })
-      if (!response.ok) throw new Error('确认客户资料失败')
-      setDetail((await response.json()) as InvitationDetail)
-      message.success('客户资料已确认')
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : '确认客户资料失败')
-    }
-  }
-
   const startMaterials = async () => {
     if (!id || !customerInfoConfirmed) return
     setStartingMaterials(true)
@@ -568,7 +552,7 @@ export function AdminOrderDetailPage() {
             <Typography.Text type="secondary">按步骤核对客户资料，确认无误后再发起委托书材料收集。</Typography.Text>
           </div>
           <Button onClick={() => navigate(`/admin/orders/${detail.id}/edit`)}>
-            编辑资料
+            校核资料与归档
           </Button>
         </div>
       </section>
@@ -579,17 +563,10 @@ export function AdminOrderDetailPage() {
             <div className="workflow-step-index">1</div>
             <div>
               <strong>客户资料核对</strong>
-              <span>检查公司、股东、法人和联系方式。无误后确认，进入委托书材料收集。</span>
+              <span>检查公司、股东、法人和联系方式。归档后进入委托书材料收集。</span>
             </div>
             <Space className="workflow-step-action">
               <StatusTag status={detail.status} />
-              {customerInfoConfirmed ? (
-                <Tag color="green">已确认</Tag>
-              ) : (
-                <Button type="primary" onClick={() => void confirmCustomerInfo()}>
-                  确认资料无误
-                </Button>
-              )}
             </Space>
           </section>
 
