@@ -565,9 +565,11 @@ export function AdminOrderDetailPage() {
               <strong>客户资料核对</strong>
               <span>检查公司、股东、法人和联系方式。归档后进入委托书材料收集。</span>
             </div>
-            <Space className="workflow-step-action">
-              <StatusTag status={detail.status} />
-            </Space>
+            <div className="workflow-step-action">
+              <Button disabled className={customerInfoConfirmed ? 'workflow-state-button is-done' : 'workflow-state-button'}>
+                {customerInfoConfirmed ? '已归档' : '待校核'}
+              </Button>
+            </div>
           </section>
 
           <section className={`workflow-step-card ${customerInfoConfirmed ? 'active' : 'locked'}`}>

@@ -932,6 +932,34 @@ body {
   box-shadow: 0 8px 16px rgba(22, 119, 255, 0.16);
 }
 
+.workflow-step-action .workflow-state-button {
+  color: #1677ff;
+  background: #eef6ff;
+  border-color: #bfdbfe;
+  opacity: 1;
+}
+
+.workflow-step-action .workflow-state-button.is-done {
+  color: #15803d;
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.workflow-step-action .workflow-state-button.ant-btn-disabled,
+.workflow-step-action .workflow-state-button.ant-btn-disabled:hover {
+  color: #1677ff;
+  background: #eef6ff;
+  border-color: #bfdbfe;
+  opacity: 1;
+}
+
+.workflow-step-action .workflow-state-button.is-done.ant-btn-disabled,
+.workflow-step-action .workflow-state-button.is-done.ant-btn-disabled:hover {
+  color: #15803d;
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
 .detail-summary-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
