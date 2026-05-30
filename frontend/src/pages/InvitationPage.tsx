@@ -82,6 +82,19 @@ type ShareOptions = {
   imgUrl: string
 }
 
+const publicIntakeToken = 'company-registration'
+
+function publicIntakeInvitation(): Invitation {
+  return {
+    id: 0,
+    token: publicIntakeToken,
+    status: 'waiting_customer',
+    allow_forward: true,
+    expires_at: null,
+    remark: '公开填写入口',
+  }
+}
+
 type WeChatJsApi = {
   config: (options: {
     debug: boolean
@@ -225,7 +238,13 @@ export function InvitationPage() {
       setError(null)
       try {
         const invitationResponse = await fetch(`/api/invitations/${activeToken}`)
-        if (!invitationResponse.ok) throw new Error('登记入口不存在或已失效')
+        if (!invitationResponse.ok) {
+          if (activeToken === publicIntakeToken && !isMaterialRoute) {
+            setInvitation(publicIntakeInvitation())
+            return
+          }
+          throw new Error('登记入口不存在或已失效')
+        }
         setInvitation((await invitationResponse.json()) as Invitation)
 
         if (isMaterialRoute) {
