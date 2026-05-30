@@ -74,12 +74,30 @@ def ensure_invitation_materials(
     return [existing[item["material_type"]] for item in REQUIRED_MATERIALS]
 
 
+def existing_invitation_materials(
+    db: Session,
+    invitation: RegistrationInvitation,
+) -> list[InvitationMaterial]:
+    materials = (
+        db.query(InvitationMaterial)
+        .filter(InvitationMaterial.invitation_id == invitation.id)
+        .all()
+    )
+    by_type = {material.material_type: material for material in materials}
+    ordered = [by_type[item["material_type"]] for item in REQUIRED_MATERIALS if item["material_type"] in by_type]
+    required_types = {item["material_type"] for item in REQUIRED_MATERIALS}
+    extras = [material for material in materials if material.material_type not in required_types]
+    return ordered + extras
+
+
 def get_invitation_material(
     db: Session,
     invitation: RegistrationInvitation,
     material_type: str,
 ) -> InvitationMaterial:
-    materials = ensure_invitation_materials(db, invitation)
+    materials = existing_invitation_materials(db, invitation)
+    if not materials:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="委托书材料收集尚未发起")
     for material in materials:
         if material.material_type == material_type:
             return material
@@ -116,8 +134,14 @@ def material_to_read(db: Session, material: InvitationMaterial) -> InvitationMat
 def material_summary(
     db: Session,
     invitation: RegistrationInvitation,
+    *,
+    create_missing: bool = False,
 ) -> InvitationMaterialSummary:
-    materials = ensure_invitation_materials(db, invitation)
+    materials = (
+        ensure_invitation_materials(db, invitation)
+        if create_missing
+        else existing_invitation_materials(db, invitation)
+    )
     read_materials = [material_to_read(db, material) for material in materials]
     return InvitationMaterialSummary(
         invitation_id=invitation.id,
@@ -192,7 +216,6 @@ def upload_invitation_material(
     material.review_comment = None
     material.reviewed_by = None
     material.reviewed_at = None
-    invitation.status = "pending_internal_confirm"
     db.commit()
     db.refresh(invitation)
     return material_summary(db, invitation)
@@ -203,9 +226,10 @@ def submit_invitation_materials(
     invitation: RegistrationInvitation,
 ) -> InvitationMaterialSummary:
     summary = material_summary(db, invitation)
+    if summary.total == 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="委托书材料收集尚未发起")
     if summary.missing:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="请先上传全部必需材料")
-    invitation.status = "pending_internal_confirm"
     db.commit()
     db.refresh(invitation)
     return material_summary(db, invitation)
@@ -227,14 +251,6 @@ def review_invitation_material(
     material.review_comment = review_comment
     material.reviewed_by = current_user.id
     material.reviewed_at = datetime.now(timezone.utc)
-
-    materials = ensure_invitation_materials(db, invitation)
-    if review_status == MaterialStatus.REJECTED.value:
-        invitation.status = "waiting_customer"
-    elif all(item.status == MaterialStatus.APPROVED.value for item in materials):
-        invitation.status = "completed"
-    else:
-        invitation.status = "pending_internal_confirm"
 
     db.commit()
     db.refresh(invitation)

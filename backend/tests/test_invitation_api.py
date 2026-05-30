@@ -158,10 +158,14 @@ def test_invitation_material_upload_review_and_public_summary(tmp_path) -> None:
         invitation = created.json()
         token = invitation["token"]
 
-        listed = client.get(f"/api/invitations/{token}/materials")
+        listed = client.get(f"/api/admin/invitations/{invitation['id']}/materials")
         assert listed.status_code == 200
-        assert listed.json()["total"] == 3
-        assert listed.json()["missing"] == 3
+        assert listed.json()["total"] == 0
+
+        started = client.post(f"/api/admin/invitations/{invitation['id']}/materials/start")
+        assert started.status_code == 200
+        assert started.json()["total"] == 3
+        assert started.json()["missing"] == 3
 
         uploaded = client.post(
             f"/api/invitations/{token}/materials/passport_translation/files",

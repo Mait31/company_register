@@ -1064,6 +1064,11 @@ body {
   align-items: start;
 }
 
+.single-column-public-form {
+  grid-template-columns: minmax(0, 760px);
+  justify-content: center;
+}
+
 .public-form-card,
 .public-side-card {
   border: 1px solid rgba(226, 232, 240, 0.9);
@@ -1514,6 +1519,21 @@ body {
 .material-review-file span {
   color: #64748b;
   font-size: 13px;
+}
+
+.material-not-started {
+  display: grid;
+  gap: 6px;
+  padding: 20px;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 18px;
+}
+
+.material-not-started strong {
+  color: #0f172a;
+  font-size: 16px;
 }
 
 @media (max-width: 640px) {

@@ -84,11 +84,11 @@ type FollowFormValues = {
 }
 
 const statusText: Record<string, string> = {
-  waiting_customer: '待客户上传',
-  pending_internal_confirm: '待核对',
-  processing: '核对中',
-  completed: '材料已齐',
-  draft: '待上传',
+  waiting_customer: '待填写',
+  pending_internal_confirm: '待整理',
+  processing: '待整理',
+  completed: '已归档',
+  draft: '待填写',
 }
 
 const statusColor: Record<string, string> = {
@@ -103,8 +103,8 @@ const statusOrder = ['pending_internal_confirm', 'processing', 'waiting_customer
 
 const statusFilters = [
   { value: 'all', label: '全部' },
-  { value: 'pending_internal_confirm', label: '待核对' },
-  { value: 'completed', label: '材料已齐' },
+  { value: 'pending_internal_confirm', label: '待整理' },
+  { value: 'completed', label: '已归档' },
 ]
 
 const materialStatusText: Record<string, string> = {
@@ -259,15 +259,100 @@ function drawRoundRect(context: CanvasRenderingContext2D, x: number, y: number, 
   context.closePath()
 }
 
+async function copyMaterialShareImage(qrRoot: HTMLDivElement | null) {
+  const qrCanvas = qrRoot?.querySelector('canvas')
+  if (!qrCanvas) {
+    message.error('分享二维码还在生成，请稍后再试')
+    return
+  }
+
+  const canvas = document.createElement('canvas')
+  canvas.width = 900
+  canvas.height = 1180
+  const context = canvas.getContext('2d')
+  if (!context) {
+    message.error('当前浏览器无法生成分享图片')
+    return
+  }
+
+  const gradient = context.createLinearGradient(0, 0, 900, 1180)
+  gradient.addColorStop(0, '#eef6ff')
+  gradient.addColorStop(1, '#f8fafc')
+  context.fillStyle = gradient
+  context.fillRect(0, 0, 900, 1180)
+
+  context.fillStyle = '#ffffff'
+  drawRoundRect(context, 70, 70, 760, 1040, 44)
+  context.fill()
+
+  context.fillStyle = '#eff6ff'
+  drawRoundRect(context, 110, 118, 112, 112, 30)
+  context.fill()
+  context.fillStyle = '#2563eb'
+  context.fillRect(140, 150, 52, 8)
+  context.fillStyle = '#93a8c8'
+  context.fillRect(140, 178, 52, 8)
+  context.fillRect(140, 206, 40, 8)
+  context.strokeStyle = '#22c55e'
+  context.lineWidth = 10
+  context.lineCap = 'round'
+  context.beginPath()
+  context.moveTo(178, 244)
+  context.lineTo(202, 268)
+  context.lineTo(244, 218)
+  context.stroke()
+
+  context.fillStyle = '#0f172a'
+  context.font = '700 58px "Segoe UI", sans-serif'
+  context.fillText('委托书材料上传', 110, 340)
+  context.fillStyle = '#64748b'
+  context.font = '400 32px "Segoe UI", sans-serif'
+  context.fillText('请上传护照翻译件、PIN 码和落地签', 110, 402)
+
+  context.fillStyle = '#f8fafc'
+  drawRoundRect(context, 150, 500, 600, 600, 36)
+  context.fill()
+  context.fillStyle = '#ffffff'
+  drawRoundRect(context, 190, 540, 520, 520, 28)
+  context.fill()
+  context.drawImage(qrCanvas, 225, 575, 450, 450)
+
+  context.fillStyle = '#0f172a'
+  context.font = '700 34px "Segoe UI", sans-serif'
+  context.textAlign = 'center'
+  context.fillText('微信扫码上传委托书材料', 450, 1080)
+  context.textAlign = 'left'
+
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png', 1))
+  if (!blob) {
+    message.error('分享图片生成失败')
+    return
+  }
+
+  try {
+    if (navigator.clipboard && 'ClipboardItem' in window) {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+      message.success('分享图片已复制，可直接粘贴发送给微信好友')
+      return
+    }
+  } catch {
+    // 复制图片能力依赖浏览器权限，失败时走下载兜底。
+  }
+
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'material-collection-share.png'
+  link.click()
+  URL.revokeObjectURL(url)
+  message.info('当前浏览器不支持复制图片，已下载分享图片')
+}
+
 export function AdminOrdersPage() {
   const navigate = useNavigate()
   const [rows, setRows] = useState<InvitationListItem[]>([])
   const [statusFilter, setStatusFilter] = useState('all')
   const [loading, setLoading] = useState(false)
-  const [shareOpen, setShareOpen] = useState(false)
-  const [shareCreating, setShareCreating] = useState(false)
-  const [shareLink, setShareLink] = useState('')
-  const shareQrRef = useRef<HTMLDivElement>(null)
 
   const loadRows = async () => {
     setLoading(true)
@@ -280,127 +365,6 @@ export function AdminOrdersPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  const createMaterialInvitation = async () => {
-    setShareCreating(true)
-    try {
-      const response = await fetch('/api/admin/invitations', {
-        method: 'POST',
-        headers: adminHeaders(),
-        body: JSON.stringify({ remark: '委托书材料收集' }),
-      })
-      if (!response.ok) throw new Error('创建材料收集链接失败')
-      const data = (await response.json()) as { token: string }
-      const link = `${window.location.origin}/i/${data.token}`
-      setShareLink(link)
-      await loadRows()
-      return link
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : '创建材料收集链接失败')
-      return ''
-    } finally {
-      setShareCreating(false)
-    }
-  }
-
-  const openShareModal = async () => {
-    const link = shareLink || (await createMaterialInvitation())
-    if (link) setShareOpen(true)
-  }
-
-  const previewMaterialLink = async () => {
-    const link = shareLink || (await createMaterialInvitation())
-    if (link) window.open(link, '_blank', 'noopener,noreferrer')
-  }
-
-  const copyShareImage = async () => {
-    const qrCanvas = shareQrRef.current?.querySelector('canvas')
-    if (!qrCanvas) {
-      message.error('分享二维码还在生成，请稍后再试')
-      return
-    }
-
-    const canvas = document.createElement('canvas')
-    canvas.width = 900
-    canvas.height = 1180
-    const context = canvas.getContext('2d')
-    if (!context) {
-      message.error('当前浏览器无法生成分享图片')
-      return
-    }
-
-    const gradient = context.createLinearGradient(0, 0, 900, 1180)
-    gradient.addColorStop(0, '#eef6ff')
-    gradient.addColorStop(1, '#f8fafc')
-    context.fillStyle = gradient
-    context.fillRect(0, 0, 900, 1180)
-
-    context.fillStyle = '#ffffff'
-    drawRoundRect(context, 70, 70, 760, 1040, 44)
-    context.fill()
-
-    context.fillStyle = '#eff6ff'
-    drawRoundRect(context, 110, 118, 112, 112, 30)
-    context.fill()
-    context.fillStyle = '#2563eb'
-    context.fillRect(140, 150, 52, 8)
-    context.fillStyle = '#93a8c8'
-    context.fillRect(140, 178, 52, 8)
-    context.fillRect(140, 206, 40, 8)
-    context.strokeStyle = '#22c55e'
-    context.lineWidth = 10
-    context.lineCap = 'round'
-    context.beginPath()
-    context.moveTo(178, 244)
-    context.lineTo(202, 268)
-    context.lineTo(244, 218)
-    context.stroke()
-
-    context.fillStyle = '#0f172a'
-    context.font = '700 58px "Segoe UI", sans-serif'
-    context.fillText('委托书材料上传', 110, 340)
-    context.fillStyle = '#64748b'
-    context.font = '400 32px "Segoe UI", sans-serif'
-    context.fillText('请上传护照翻译件、PIN 码和落地签', 110, 402)
-
-    context.fillStyle = '#f8fafc'
-    drawRoundRect(context, 150, 500, 600, 600, 36)
-    context.fill()
-    context.fillStyle = '#ffffff'
-    drawRoundRect(context, 190, 540, 520, 520, 28)
-    context.fill()
-    context.drawImage(qrCanvas, 225, 575, 450, 450)
-
-    context.fillStyle = '#0f172a'
-    context.font = '700 34px "Segoe UI", sans-serif'
-    context.textAlign = 'center'
-    context.fillText('微信扫码上传委托书材料', 450, 1080)
-    context.textAlign = 'left'
-
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png', 1))
-    if (!blob) {
-      message.error('分享图片生成失败')
-      return
-    }
-
-    try {
-      if (navigator.clipboard && 'ClipboardItem' in window) {
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
-        message.success('分享图片已复制，可直接粘贴发送给微信好友')
-        return
-      }
-    } catch {
-      // 复制图片能力依赖浏览器权限，失败时走下载兜底。
-    }
-
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'company-registration-share.png'
-    link.click()
-    URL.revokeObjectURL(url)
-    message.info('当前浏览器不支持复制图片，已下载分享图片')
   }
 
   const summary = {
@@ -439,58 +403,7 @@ export function AdminOrdersPage() {
           <Typography.Title level={2}>资料台账</Typography.Title>
           <Typography.Text type="secondary">客户提交后进入台账。点击记录查看提交信息，再进入编辑页完善资料。</Typography.Text>
         </div>
-        <Space>
-          <Button onClick={() => void previewMaterialLink()}>预览上传页</Button>
-          <Button type="primary" loading={shareCreating} onClick={() => void openShareModal()}>
-            发起材料收集
-          </Button>
-        </Space>
       </section>
-
-      <Modal
-        className="share-modal"
-        footer={null}
-        onCancel={() => setShareOpen(false)}
-        open={shareOpen}
-        title="分享客户登记链接"
-        width={720}
-      >
-        <div className="share-modal-grid">
-          <div className="share-preview">
-            <Typography.Text className="share-label">分享图片预览</Typography.Text>
-            <div className="share-poster-preview">
-              <div className="share-poster-icon">
-                <img src="/wechat-share.png" alt="委托书材料上传" />
-              </div>
-              <div>
-                <strong>委托书材料上传</strong>
-                <span>请上传护照翻译件、PIN 码和落地签</span>
-              </div>
-              <div className="share-poster-qr" ref={shareQrRef}>
-                <QRCode value={shareLink || window.location.origin} size={168} bordered={false} type="canvas" />
-              </div>
-              <em>微信扫码上传委托书材料</em>
-            </div>
-            <Typography.Paragraph type="secondary">
-              复制图片后可直接粘贴发送给微信好友。客户扫码后进入材料上传页。
-            </Typography.Paragraph>
-          </div>
-
-          <div className="share-tools">
-            <Typography.Text className="share-label">发送方式</Typography.Text>
-            <div className="share-method-card">
-              <strong>推荐：复制分享图片</strong>
-              <span>发送到微信后，客户扫码即可打开材料上传页。</span>
-            </div>
-            <div className="share-actions">
-              <Button type="primary" onClick={copyShareImage}>
-                复制图片
-              </Button>
-              <Button onClick={() => void previewMaterialLink()}>预览</Button>
-            </div>
-          </div>
-        </div>
-      </Modal>
 
       <section className="ledger-shell">
         <div className="ledger-summary">
@@ -562,6 +475,9 @@ export function AdminOrderDetailPage() {
   const [detail, setDetail] = useState<InvitationDetail | null>(null)
   const [materials, setMaterials] = useState<MaterialSummary | null>(null)
   const [loading, setLoading] = useState(false)
+  const [startingMaterials, setStartingMaterials] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
+  const shareQrRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!id) return
@@ -592,6 +508,27 @@ export function AdminOrderDetailPage() {
       message.success(status === 'approved' ? '材料已通过' : '已要求客户重传')
     } catch (error) {
       message.error(error instanceof Error ? error.message : '材料核对失败')
+    }
+  }
+
+  const materialLink = detail ? `${window.location.origin}/i/${detail.token}/materials` : ''
+
+  const startMaterials = async () => {
+    if (!id) return
+    setStartingMaterials(true)
+    try {
+      const response = await fetch(`/api/admin/invitations/${id}/materials/start`, {
+        method: 'POST',
+        headers: adminHeaders(),
+      })
+      if (!response.ok) throw new Error('发起委托书材料收集失败')
+      setMaterials((await response.json()) as MaterialSummary)
+      setShareOpen(true)
+      message.success('委托书材料收集已发起')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '发起委托书材料收集失败')
+    } finally {
+      setStartingMaterials(false)
     }
   }
 
@@ -641,15 +578,26 @@ export function AdminOrderDetailPage() {
           <div>
             <Typography.Title level={4}>委托书材料</Typography.Title>
             <Typography.Text type="secondary">
-              后台只核对三件材料是否齐全、是否正确、是否需要重传。
+              客户资料核对无误后，在这里手动发起委托书材料收集。
             </Typography.Text>
           </div>
-          <Tag color={materials?.missing ? 'orange' : materials?.approved === materials?.total ? 'green' : 'blue'}>
-            {materials?.approved || 0}/{materials?.total || 3} 已通过
-          </Tag>
+          <Space>
+            {materials?.total ? (
+              <>
+                <Tag color={materials.missing ? 'orange' : materials.approved === materials.total ? 'green' : 'blue'}>
+                  {materials.approved}/{materials.total} 已通过
+                </Tag>
+                <Button onClick={() => setShareOpen(true)}>分享上传链接</Button>
+              </>
+            ) : (
+              <Button type="primary" loading={startingMaterials} onClick={() => void startMaterials()}>
+                发起委托书材料收集
+              </Button>
+            )}
+          </Space>
         </div>
 
-        <div className="material-review-grid">
+        {materials?.total ? <div className="material-review-grid">
           {materials?.materials.map((material) => (
             <article className={`material-review-card status-${material.status}`} key={material.material_type}>
               <div className="material-review-card-main">
@@ -685,8 +633,58 @@ export function AdminOrderDetailPage() {
               </Space>
             </article>
           ))}
-        </div>
+        </div> : (
+          <div className="material-not-started">
+            <strong>尚未发起</strong>
+            <span>客户基础资料整理确认后，点击右上角按钮生成同一客户的委托书材料上传入口。</span>
+          </div>
+        )}
       </Card>
+
+      <Modal
+        className="share-modal"
+        footer={null}
+        onCancel={() => setShareOpen(false)}
+        open={shareOpen}
+        title="分享委托书材料上传链接"
+        width={720}
+      >
+        <div className="share-modal-grid">
+          <div className="share-preview">
+            <Typography.Text className="share-label">分享图片预览</Typography.Text>
+            <div className="share-poster-preview">
+              <div className="share-poster-icon">
+                <img src="/wechat-share.png" alt="委托书材料上传" />
+              </div>
+              <div>
+                <strong>委托书材料上传</strong>
+                <span>请上传护照翻译件、PIN 码和落地签</span>
+              </div>
+              <div className="share-poster-qr" ref={shareQrRef}>
+                <QRCode value={materialLink} size={168} bordered={false} type="canvas" />
+              </div>
+              <em>微信扫码上传委托书材料</em>
+            </div>
+            <Typography.Paragraph type="secondary">
+              这个链接挂在当前客户资料下，不会在资料台账里生成新的并列记录。
+            </Typography.Paragraph>
+          </div>
+
+          <div className="share-tools">
+            <Typography.Text className="share-label">发送方式</Typography.Text>
+            <div className="share-method-card">
+              <strong>推荐：复制分享图片</strong>
+              <span>发送到微信后，客户扫码即可打开委托书材料上传页。</span>
+            </div>
+            <div className="share-actions">
+              <Button type="primary" onClick={() => void copyMaterialShareImage(shareQrRef.current)}>
+                复制图片
+              </Button>
+              <Button onClick={() => window.open(materialLink, '_blank', 'noopener,noreferrer')}>预览</Button>
+            </div>
+          </div>
+        </div>
+      </Modal>
 
       {detail.participants.length ? fieldGroups.map((group) => (
         <Card className="detail-page-card" key={group.title}>

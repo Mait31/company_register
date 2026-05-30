@@ -11,6 +11,7 @@ from app.models.user import User
 from app.models.wechat import RegistrationInvitation
 from app.modules.intake.repository import PUBLIC_INTAKE_TOKEN, get_invitation_by_token
 from app.modules.intake.materials import (
+    ensure_invitation_materials,
     material_summary,
     review_invitation_material,
     stored_file_for_material,
@@ -34,12 +35,9 @@ router = APIRouter(tags=["invitations"])
 
 
 def resolve_material_invitation(db: Session, token: str):
-    invitation = resolve_invitation_for_submission(db, token)
+    invitation = get_invitation_by_token(db, token)
     if not invitation:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="邀请不存在")
-    if token == PUBLIC_INTAKE_TOKEN:
-        db.commit()
-        db.refresh(invitation)
     return invitation
 
 
@@ -125,6 +123,21 @@ def get_admin_invitation_materials(
     invitation = db.get(RegistrationInvitation, invitation_id)
     if not invitation:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="邀请不存在")
+    return material_summary(db, invitation)
+
+
+@router.post("/admin/invitations/{invitation_id}/materials/start", response_model=InvitationMaterialSummary)
+def start_admin_invitation_materials(
+    invitation_id: int,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> InvitationMaterialSummary:
+    invitation = db.get(RegistrationInvitation, invitation_id)
+    if not invitation:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="邀请不存在")
+    ensure_invitation_materials(db, invitation)
+    db.commit()
+    db.refresh(invitation)
     return material_summary(db, invitation)
 
 
