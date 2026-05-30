@@ -1,4 +1,4 @@
-import { Button, Card, Form, Input, Modal, QRCode, Select, Space, Tag, Typography, message } from 'antd'
+import { Alert, Button, Card, Form, Input, Modal, QRCode, Select, Space, Tag, Typography, message } from 'antd'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
@@ -31,6 +31,39 @@ type InvitationDetail = InvitationListItem & {
   participants: InvitationParticipant[]
 }
 
+type MaterialFile = {
+  id: number
+  file_name: string
+  file_ext?: string | null
+  mime_type?: string | null
+  file_size: number
+  uploaded_at: string
+}
+
+type InvitationMaterial = {
+  id: number
+  material_type: string
+  material_name: string
+  description: string
+  required: boolean
+  status: string
+  review_comment?: string | null
+  reviewed_at?: string | null
+  file?: MaterialFile | null
+}
+
+type MaterialSummary = {
+  invitation_id: number
+  token: string
+  status: string
+  total: number
+  uploaded: number
+  approved: number
+  rejected: number
+  missing: number
+  materials: InvitationMaterial[]
+}
+
 type FollowFormValues = {
   status: string
   remark?: string
@@ -51,11 +84,11 @@ type FollowFormValues = {
 }
 
 const statusText: Record<string, string> = {
-  waiting_customer: '待填写',
-  pending_internal_confirm: '待整理',
-  processing: '待整理',
-  completed: '已归档',
-  draft: '待填写',
+  waiting_customer: '待客户上传',
+  pending_internal_confirm: '待核对',
+  processing: '核对中',
+  completed: '材料已齐',
+  draft: '待上传',
 }
 
 const statusColor: Record<string, string> = {
@@ -70,9 +103,17 @@ const statusOrder = ['pending_internal_confirm', 'processing', 'waiting_customer
 
 const statusFilters = [
   { value: 'all', label: '全部' },
-  { value: 'pending_internal_confirm', label: '待整理' },
-  { value: 'completed', label: '已归档' },
+  { value: 'pending_internal_confirm', label: '待核对' },
+  { value: 'completed', label: '材料已齐' },
 ]
+
+const materialStatusText: Record<string, string> = {
+  missing: '待上传',
+  uploaded: '待核对',
+  reviewing: '待核对',
+  approved: '已通过',
+  rejected: '需重传',
+}
 
 const fieldGroups = [
   {
@@ -193,6 +234,17 @@ async function fetchDetail(id: string) {
   return (await response.json()) as InvitationDetail
 }
 
+async function fetchMaterials(id: string) {
+  const response = await fetch(`/api/admin/invitations/${id}/materials`, { headers: adminHeaders() })
+  if (!response.ok) throw new Error('加载委托书材料失败')
+  return (await response.json()) as MaterialSummary
+}
+
+function formatFileSize(size: number) {
+  if (size >= 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`
+  return `${Math.max(1, Math.round(size / 1024))} KB`
+}
+
 function StatusTag({ status }: { status: string }) {
   return <Tag color={statusColor[status] || 'default'}>{statusText[status] || status}</Tag>
 }
@@ -213,8 +265,9 @@ export function AdminOrdersPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [loading, setLoading] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
+  const [shareCreating, setShareCreating] = useState(false)
+  const [shareLink, setShareLink] = useState('')
   const shareQrRef = useRef<HTMLDivElement>(null)
-  const publicIntakeLink = `${window.location.origin}/i/company-registration`
 
   const loadRows = async () => {
     setLoading(true)
@@ -227,6 +280,38 @@ export function AdminOrdersPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const createMaterialInvitation = async () => {
+    setShareCreating(true)
+    try {
+      const response = await fetch('/api/admin/invitations', {
+        method: 'POST',
+        headers: adminHeaders(),
+        body: JSON.stringify({ remark: '委托书材料收集' }),
+      })
+      if (!response.ok) throw new Error('创建材料收集链接失败')
+      const data = (await response.json()) as { token: string }
+      const link = `${window.location.origin}/i/${data.token}`
+      setShareLink(link)
+      await loadRows()
+      return link
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '创建材料收集链接失败')
+      return ''
+    } finally {
+      setShareCreating(false)
+    }
+  }
+
+  const openShareModal = async () => {
+    const link = shareLink || (await createMaterialInvitation())
+    if (link) setShareOpen(true)
+  }
+
+  const previewMaterialLink = async () => {
+    const link = shareLink || (await createMaterialInvitation())
+    if (link) window.open(link, '_blank', 'noopener,noreferrer')
   }
 
   const copyShareImage = async () => {
@@ -274,10 +359,10 @@ export function AdminOrdersPage() {
 
     context.fillStyle = '#0f172a'
     context.font = '700 58px "Segoe UI", sans-serif'
-    context.fillText('公司注册信息登记', 110, 340)
+    context.fillText('委托书材料上传', 110, 340)
     context.fillStyle = '#64748b'
     context.font = '400 32px "Segoe UI", sans-serif'
-    context.fillText('请按要求补充公司登记所需信息', 110, 402)
+    context.fillText('请上传护照翻译件、PIN 码和落地签', 110, 402)
 
     context.fillStyle = '#f8fafc'
     drawRoundRect(context, 150, 500, 600, 600, 36)
@@ -290,7 +375,7 @@ export function AdminOrdersPage() {
     context.fillStyle = '#0f172a'
     context.font = '700 34px "Segoe UI", sans-serif'
     context.textAlign = 'center'
-    context.fillText('微信扫码填写登记信息', 450, 1080)
+    context.fillText('微信扫码上传委托书材料', 450, 1080)
     context.textAlign = 'left'
 
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png', 1))
@@ -355,9 +440,9 @@ export function AdminOrdersPage() {
           <Typography.Text type="secondary">客户提交后进入台账。点击记录查看提交信息，再进入编辑页完善资料。</Typography.Text>
         </div>
         <Space>
-          <Button onClick={() => window.open(publicIntakeLink, '_blank', 'noopener,noreferrer')}>预览登记表</Button>
-          <Button type="primary" onClick={() => setShareOpen(true)}>
-            分享登记链接
+          <Button onClick={() => void previewMaterialLink()}>预览上传页</Button>
+          <Button type="primary" loading={shareCreating} onClick={() => void openShareModal()}>
+            发起材料收集
           </Button>
         </Space>
       </section>
@@ -375,19 +460,19 @@ export function AdminOrdersPage() {
             <Typography.Text className="share-label">分享图片预览</Typography.Text>
             <div className="share-poster-preview">
               <div className="share-poster-icon">
-                <img src="/wechat-share.png" alt="公司注册信息登记" />
+                <img src="/wechat-share.png" alt="委托书材料上传" />
               </div>
               <div>
-                <strong>公司注册信息登记</strong>
-                <span>请按要求补充公司登记所需信息</span>
+                <strong>委托书材料上传</strong>
+                <span>请上传护照翻译件、PIN 码和落地签</span>
               </div>
               <div className="share-poster-qr" ref={shareQrRef}>
-                <QRCode value={publicIntakeLink} size={168} bordered={false} type="canvas" />
+                <QRCode value={shareLink || window.location.origin} size={168} bordered={false} type="canvas" />
               </div>
-              <em>微信扫码填写登记信息</em>
+              <em>微信扫码上传委托书材料</em>
             </div>
             <Typography.Paragraph type="secondary">
-              复制图片后可直接粘贴发送给微信好友。客户扫码后进入登记表填写资料。
+              复制图片后可直接粘贴发送给微信好友。客户扫码后进入材料上传页。
             </Typography.Paragraph>
           </div>
 
@@ -395,13 +480,13 @@ export function AdminOrdersPage() {
             <Typography.Text className="share-label">发送方式</Typography.Text>
             <div className="share-method-card">
               <strong>推荐：复制分享图片</strong>
-              <span>发送到微信后，客户扫码即可打开登记表。</span>
+              <span>发送到微信后，客户扫码即可打开材料上传页。</span>
             </div>
             <div className="share-actions">
               <Button type="primary" onClick={copyShareImage}>
                 复制图片
               </Button>
-              <Button onClick={() => window.open(publicIntakeLink, '_blank', 'noopener,noreferrer')}>预览</Button>
+              <Button onClick={() => void previewMaterialLink()}>预览</Button>
             </div>
           </div>
         </div>
@@ -475,16 +560,40 @@ export function AdminOrderDetailPage() {
   const navigate = useNavigate()
   const { id } = useParams()
   const [detail, setDetail] = useState<InvitationDetail | null>(null)
+  const [materials, setMaterials] = useState<MaterialSummary | null>(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!id) return
     setLoading(true)
-    fetchDetail(id)
-      .then(setDetail)
+    Promise.all([fetchDetail(id), fetchMaterials(id)])
+      .then(([detailData, materialData]) => {
+        setDetail(detailData)
+        setMaterials(materialData)
+      })
       .catch((error) => message.error(error instanceof Error ? error.message : '加载资料详情失败'))
       .finally(() => setLoading(false))
   }, [id])
+
+  const reviewMaterial = async (materialType: string, status: 'approved' | 'rejected') => {
+    if (!id) return
+    try {
+      const response = await fetch(`/api/admin/invitations/${id}/materials/${materialType}/review`, {
+        method: 'POST',
+        headers: adminHeaders(),
+        body: JSON.stringify({
+          status,
+          review_comment: status === 'rejected' ? '材料不清晰或不符合要求，请重新上传。' : null,
+        }),
+      })
+      if (!response.ok) throw new Error('材料核对失败')
+      setMaterials((await response.json()) as MaterialSummary)
+      setDetail(await fetchDetail(id))
+      message.success(status === 'approved' ? '材料已通过' : '已要求客户重传')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '材料核对失败')
+    }
+  }
 
   if (loading || !detail) {
     return <Card className="detail-page-card">资料加载中...</Card>
@@ -527,7 +636,59 @@ export function AdminOrderDetailPage() {
         </div>
       </Card>
 
-      {fieldGroups.map((group) => (
+      <Card className="detail-page-card">
+        <div className="material-review-head">
+          <div>
+            <Typography.Title level={4}>委托书材料</Typography.Title>
+            <Typography.Text type="secondary">
+              后台只核对三件材料是否齐全、是否正确、是否需要重传。
+            </Typography.Text>
+          </div>
+          <Tag color={materials?.missing ? 'orange' : materials?.approved === materials?.total ? 'green' : 'blue'}>
+            {materials?.approved || 0}/{materials?.total || 3} 已通过
+          </Tag>
+        </div>
+
+        <div className="material-review-grid">
+          {materials?.materials.map((material) => (
+            <article className={`material-review-card status-${material.status}`} key={material.material_type}>
+              <div className="material-review-card-main">
+                <strong>{material.material_name}</strong>
+                <Tag>{materialStatusText[material.status] || material.status}</Tag>
+              </div>
+              <p>{material.description}</p>
+              <div className="material-review-file">
+                {material.file ? (
+                  <>
+                    <strong>{material.file.file_name}</strong>
+                    <span>{formatFileSize(material.file.file_size)}</span>
+                  </>
+                ) : (
+                  <span>客户尚未上传</span>
+                )}
+              </div>
+              {material.review_comment ? <Alert type="warning" message={material.review_comment} /> : null}
+              <Space>
+                <Button
+                  disabled={!material.file || material.status === 'approved'}
+                  onClick={() => void reviewMaterial(material.material_type, 'approved')}
+                >
+                  通过
+                </Button>
+                <Button
+                  danger
+                  disabled={!material.file}
+                  onClick={() => void reviewMaterial(material.material_type, 'rejected')}
+                >
+                  要求重传
+                </Button>
+              </Space>
+            </article>
+          ))}
+        </div>
+      </Card>
+
+      {detail.participants.length ? fieldGroups.map((group) => (
         <Card className="detail-page-card" key={group.title}>
           <Typography.Title level={4}>{group.title}</Typography.Title>
           <div className="submitted-field-grid">
@@ -539,7 +700,7 @@ export function AdminOrderDetailPage() {
             ))}
           </div>
         </Card>
-      ))}
+      )) : null}
 
       {detail.remark ? (
         <Card className="detail-page-card">

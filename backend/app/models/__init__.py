@@ -2,7 +2,7 @@ from app.models.company import CompanyArchive, CompanyDraft
 from app.models.document import GeneratedDocument
 from app.models.file import StoredFile
 from app.models.log import AuditLog, WorkflowLog
-from app.models.material import OrderMaterial
+from app.models.material import InvitationMaterial, OrderMaterial
 from app.models.order import RegistrationOrder
 from app.models.person import Person, Shareholder
 from app.models.quotation import Quotation, QuotationItem
@@ -16,6 +16,7 @@ __all__ = [
     "Customer",
     "GeneratedDocument",
     "InvitationParticipant",
+    "InvitationMaterial",
     "OrderMaterial",
     "Person",
     "Quotation",

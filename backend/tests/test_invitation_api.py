@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.api.deps import get_current_user
+from app.core.config import settings
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
@@ -144,4 +145,44 @@ def test_public_intake_submission_creates_admin_record() -> None:
         assert rows[0]["contact_name"] == "王五"
         assert rows[0]["token"] != "company-registration"
     finally:
+        app.dependency_overrides.clear()
+
+
+def test_invitation_material_upload_review_and_public_summary(tmp_path) -> None:
+    client = make_client()
+    original_storage_root = settings.storage_root
+    settings.storage_root = str(tmp_path)
+    try:
+        created = client.post("/api/admin/invitations", json={"remark": "委托书材料收集"})
+        assert created.status_code == 200
+        invitation = created.json()
+        token = invitation["token"]
+
+        listed = client.get(f"/api/invitations/{token}/materials")
+        assert listed.status_code == 200
+        assert listed.json()["total"] == 3
+        assert listed.json()["missing"] == 3
+
+        uploaded = client.post(
+            f"/api/invitations/{token}/materials/passport_translation/files",
+            files={"upload": ("passport.pdf", b"fake pdf", "application/pdf")},
+        )
+        assert uploaded.status_code == 200
+        uploaded_body = uploaded.json()
+        assert uploaded_body["uploaded"] == 1
+        assert uploaded_body["materials"][0]["status"] == "uploaded"
+        assert uploaded_body["materials"][0]["file"]["file_name"] == "passport.pdf"
+
+        reviewed = client.post(
+            f"/api/admin/invitations/{invitation['id']}/materials/passport_translation/review",
+            json={"status": "approved"},
+        )
+        assert reviewed.status_code == 200
+        assert reviewed.json()["approved"] == 1
+
+        public_summary = client.get(f"/api/public/invitations/{token}/materials")
+        assert public_summary.status_code == 200
+        assert public_summary.json()["materials"][0]["file"]["file_name"] == "passport.pdf"
+    finally:
+        settings.storage_root = original_storage_root
         app.dependency_overrides.clear()

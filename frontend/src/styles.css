@@ -1259,6 +1259,263 @@ body {
   padding: 46px 12px;
 }
 
+.material-public-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 28px 14px 56px;
+  background:
+    linear-gradient(180deg, #ffffff 0, #f7f9fc 260px, #eef2f7 100%),
+    #eef2f7;
+}
+
+.material-loading-page {
+  align-items: center;
+}
+
+.material-phone {
+  width: min(100%, 430px);
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #dfe5ef;
+  border-radius: 34px;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.12);
+}
+
+.material-phone-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 58px;
+  padding: 0 22px;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 800;
+  border-bottom: 1px solid #eef0f3;
+}
+
+.material-phone-screen {
+  padding: 24px 18px 18px;
+}
+
+.material-title-block {
+  margin-bottom: 20px;
+}
+
+.material-title-block h1.ant-typography {
+  margin: 4px 0 8px;
+  color: #0f172a;
+  font-size: 31px;
+  line-height: 1.2;
+}
+
+.material-title-block .ant-typography {
+  margin-bottom: 0;
+  color: #64748b;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.material-upload-list {
+  display: grid;
+  gap: 12px;
+}
+
+.material-upload-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e6ebf2;
+  border-radius: 20px;
+}
+
+.material-upload-card.status-approved {
+  border-color: #bbf7d0;
+  background: #fbfffd;
+}
+
+.material-upload-card.status-rejected {
+  border-color: #fecaca;
+  background: #fffafa;
+}
+
+.material-upload-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.material-upload-card-head strong,
+.material-review-card strong {
+  color: #0f172a;
+  font-size: 17px;
+  line-height: 1.35;
+}
+
+.material-upload-card-head p,
+.material-review-card p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.required {
+  margin-right: 3px;
+  color: #dc2626;
+}
+
+.material-status {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 800;
+  background: #f1f5f9;
+  border-radius: 999px;
+}
+
+.status-approved .material-status {
+  color: #15803d;
+  background: #dcfce7;
+}
+
+.status-rejected .material-status {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.material-file-box {
+  display: grid;
+  place-items: center;
+  min-height: 92px;
+  padding: 16px;
+  color: #64748b;
+  text-align: center;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 16px;
+}
+
+.material-file-box.done {
+  place-items: stretch;
+  text-align: left;
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.material-file-box strong,
+.material-file-box span {
+  display: block;
+}
+
+.material-file-box strong {
+  color: #166534;
+  word-break: break-word;
+}
+
+.material-file-box span {
+  margin-top: 5px;
+  font-size: 13px;
+}
+
+.material-review-alert {
+  border-radius: 12px;
+}
+
+.material-submit-bar {
+  position: sticky;
+  bottom: 0;
+  padding-top: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), #fff 42%);
+}
+
+.material-submit-bar .ant-btn {
+  height: 48px;
+  border-radius: 999px;
+  font-weight: 800;
+}
+
+.material-success-card {
+  width: min(100%, 430px);
+  border: 0;
+  border-radius: 26px;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.12);
+}
+
+.material-review-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.material-review-head h4.ant-typography {
+  margin: 0 0 6px;
+}
+
+.material-review-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.material-review-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  background: #fbfcff;
+  border: 1px solid #e8edf3;
+  border-radius: 18px;
+}
+
+.material-review-card.status-approved {
+  border-color: #bbf7d0;
+  background: #f7fef9;
+}
+
+.material-review-card.status-rejected {
+  border-color: #fecaca;
+  background: #fff7f7;
+}
+
+.material-review-card-main,
+.material-review-file {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.material-review-card-main .ant-tag {
+  margin: 0;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.material-review-file {
+  display: grid;
+  min-height: 64px;
+  padding: 12px;
+  color: #64748b;
+  background: #fff;
+  border: 1px solid #edf1f6;
+  border-radius: 14px;
+}
+
+.material-review-file strong {
+  font-size: 14px;
+  word-break: break-word;
+}
+
+.material-review-file span {
+  color: #64748b;
+  font-size: 13px;
+}
+
 @media (max-width: 640px) {
   .app-header {
     height: auto;
@@ -1350,6 +1607,31 @@ body {
   .public-side-panel {
     position: static;
     order: 2;
+  }
+
+  .material-public-page {
+    padding: 0;
+    background: #fff;
+  }
+
+  .material-phone {
+    width: 100%;
+    min-height: 100vh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .material-phone-screen {
+    padding: 22px 14px 16px;
+  }
+
+  .material-review-head {
+    flex-direction: column;
+  }
+
+  .material-review-grid {
+    grid-template-columns: 1fr;
   }
 
   .admin-hero h2.ant-typography,

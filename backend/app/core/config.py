@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     storage_root: str = "/app/storage"
     public_base_url: str = "http://localhost"
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost"])
+    internal_api_key: str = ""
 
     wecom_corp_id: str = ""
     wecom_agent_id: str = ""

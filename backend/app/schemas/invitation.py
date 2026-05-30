@@ -94,3 +94,44 @@ class AdminInvitationUpdate(BaseModel):
     status: InvitationFollowStatus | None = None
     remark: str | None = None
     submitted_fields_json: dict[str, Any] | None = None
+
+
+MaterialReviewStatus = Literal["approved", "rejected"]
+
+
+class InvitationMaterialFileRead(BaseModel):
+    id: int
+    file_name: str
+    file_ext: str | None
+    mime_type: str | None
+    file_size: int
+    uploaded_at: datetime
+
+
+class InvitationMaterialRead(BaseModel):
+    id: int
+    material_type: str
+    material_name: str
+    description: str
+    required: bool
+    status: str
+    review_comment: str | None
+    reviewed_at: datetime | None
+    file: InvitationMaterialFileRead | None
+
+
+class InvitationMaterialSummary(BaseModel):
+    invitation_id: int
+    token: str
+    status: str
+    total: int
+    uploaded: int
+    approved: int
+    rejected: int
+    missing: int
+    materials: list[InvitationMaterialRead]
+
+
+class InvitationMaterialReview(BaseModel):
+    status: MaterialReviewStatus
+    review_comment: str | None = Field(default=None, max_length=500)
