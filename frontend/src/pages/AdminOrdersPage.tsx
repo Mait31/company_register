@@ -478,6 +478,7 @@ export function AdminOrderDetailPage() {
   const [startingMaterials, setStartingMaterials] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
   const shareQrRef = useRef<HTMLDivElement>(null)
+  const customerInfoConfirmed = detail?.status === 'completed'
 
   useEffect(() => {
     if (!id) return
@@ -513,8 +514,24 @@ export function AdminOrderDetailPage() {
 
   const materialLink = detail ? `${window.location.origin}/i/${detail.token}/materials` : ''
 
+  const confirmCustomerInfo = async () => {
+    if (!detail) return
+    try {
+      const response = await fetch(`/api/admin/invitations/${detail.id}`, {
+        method: 'PATCH',
+        headers: adminHeaders(),
+        body: JSON.stringify({ status: 'completed', remark: detail.remark || null }),
+      })
+      if (!response.ok) throw new Error('确认客户资料失败')
+      setDetail((await response.json()) as InvitationDetail)
+      message.success('客户资料已确认')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '确认客户资料失败')
+    }
+  }
+
   const startMaterials = async () => {
-    if (!id) return
+    if (!id || !customerInfoConfirmed) return
     setStartingMaterials(true)
     try {
       const response = await fetch(`/api/admin/invitations/${id}/materials/start`, {
@@ -541,18 +558,70 @@ export function AdminOrderDetailPage() {
   return (
     <Space direction="vertical" size={20} className="page-stack admin-workspace">
       <section className="detail-hero">
-        <Button onClick={() => navigate('/admin/orders')}>返回列表</Button>
-        <div>
-          <Typography.Text className="eyebrow">提交信息</Typography.Text>
-          <Typography.Title level={2}>{detail.company_name || '未填写公司名称'}</Typography.Title>
-          <Typography.Text type="secondary">先核对客户提交的信息，再进入编辑页修正和归档。</Typography.Text>
+        <div className="detail-topline">
+          <Button onClick={() => navigate('/admin/orders')}>返回列表</Button>
         </div>
-        <Button type="primary" onClick={() => navigate(`/admin/orders/${detail.id}/edit`)}>
-          编辑资料
-        </Button>
+        <div className="detail-title-row">
+          <div>
+            <Typography.Text className="eyebrow">提交信息</Typography.Text>
+            <Typography.Title level={2}>{detail.company_name || '未填写公司名称'}</Typography.Title>
+            <Typography.Text type="secondary">按步骤核对客户资料，确认无误后再发起委托书材料收集。</Typography.Text>
+          </div>
+          <Button onClick={() => navigate(`/admin/orders/${detail.id}/edit`)}>
+            编辑资料
+          </Button>
+        </div>
       </section>
 
       <Card className="detail-page-card">
+        <div className="workflow-steps">
+          <section className={`workflow-step-card ${customerInfoConfirmed ? 'done' : 'active'}`}>
+            <div className="workflow-step-index">1</div>
+            <div>
+              <strong>客户资料核对</strong>
+              <span>检查公司、股东、法人和联系方式。无误后确认，进入委托书材料收集。</span>
+            </div>
+            <Space>
+              <StatusTag status={detail.status} />
+              {customerInfoConfirmed ? (
+                <Tag color="green">已确认</Tag>
+              ) : (
+                <Button type="primary" onClick={() => void confirmCustomerInfo()}>
+                  确认资料无误
+                </Button>
+              )}
+            </Space>
+          </section>
+
+          <section className={`workflow-step-card ${customerInfoConfirmed ? 'active' : 'locked'}`}>
+            <div className="workflow-step-index">2</div>
+            <div>
+              <strong>委托书材料收集</strong>
+              <span>客户资料确认后，手动发起护照翻译件、PIN 码、落地签三项材料上传。</span>
+            </div>
+            {materials?.total ? (
+              <Button onClick={() => setShareOpen(true)}>分享上传链接</Button>
+            ) : (
+              <Button
+                type="primary"
+                disabled={!customerInfoConfirmed}
+                loading={startingMaterials}
+                onClick={() => void startMaterials()}
+              >
+                发起委托书材料收集
+              </Button>
+            )}
+          </section>
+        </div>
+      </Card>
+
+      <Card className="detail-page-card">
+        <div className="detail-card-heading">
+          <div>
+            <Typography.Title level={4}>客户资料摘要</Typography.Title>
+            <Typography.Text type="secondary">用于快速确认当前记录是否已经可以进入下一步。</Typography.Text>
+          </div>
+        </div>
         <div className="detail-summary-grid">
           <div>
             <span>状态</span>
@@ -578,7 +647,7 @@ export function AdminOrderDetailPage() {
           <div>
             <Typography.Title level={4}>委托书材料</Typography.Title>
             <Typography.Text type="secondary">
-              客户资料核对无误后，在这里手动发起委托书材料收集。
+              第一步确认后，这里会显示委托书三项材料的上传和核对状态。
             </Typography.Text>
           </div>
           <Space>
@@ -590,7 +659,12 @@ export function AdminOrderDetailPage() {
                 <Button onClick={() => setShareOpen(true)}>分享上传链接</Button>
               </>
             ) : (
-              <Button type="primary" loading={startingMaterials} onClick={() => void startMaterials()}>
+              <Button
+                type="primary"
+                disabled={!customerInfoConfirmed}
+                loading={startingMaterials}
+                onClick={() => void startMaterials()}
+              >
                 发起委托书材料收集
               </Button>
             )}
@@ -636,7 +710,11 @@ export function AdminOrderDetailPage() {
         </div> : (
           <div className="material-not-started">
             <strong>尚未发起</strong>
-            <span>客户基础资料整理确认后，点击右上角按钮生成同一客户的委托书材料上传入口。</span>
+            <span>
+              {customerInfoConfirmed
+                ? '点击上方按钮生成同一客户的委托书材料上传入口。'
+                : '请先完成客户资料核对并确认无误。'}
+            </span>
           </div>
         )}
       </Card>

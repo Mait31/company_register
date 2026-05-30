@@ -791,13 +791,23 @@ body {
 
 .detail-hero {
   display: grid;
-  grid-template-columns: 116px minmax(0, 1fr) auto;
-  gap: 24px;
-  align-items: end;
+  gap: 14px;
   padding: 8px 0 0;
 }
 
-.detail-hero h2.ant-typography {
+.detail-topline {
+  display: flex;
+  align-items: center;
+}
+
+.detail-title-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.detail-title-row h2.ant-typography {
   margin: 4px 0 8px;
   font-size: 34px;
   line-height: 1.18;
@@ -823,6 +833,82 @@ body {
 
 .detail-page-card h4.ant-typography {
   margin: 0 0 18px;
+}
+
+.detail-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.detail-card-heading h4.ant-typography {
+  margin: 0 0 6px;
+}
+
+.workflow-steps {
+  display: grid;
+  gap: 12px;
+}
+
+.workflow-step-card {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e5eaf1;
+  border-radius: 18px;
+}
+
+.workflow-step-card.active {
+  background: #f8fbff;
+  border-color: #bfdbfe;
+}
+
+.workflow-step-card.done {
+  background: #f7fef9;
+  border-color: #bbf7d0;
+}
+
+.workflow-step-card.locked {
+  opacity: 0.72;
+}
+
+.workflow-step-index {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  color: #1677ff;
+  font-weight: 850;
+  background: #eaf3ff;
+  border: 1px solid #cfe4ff;
+  border-radius: 14px;
+}
+
+.workflow-step-card.done .workflow-step-index {
+  color: #15803d;
+  background: #dcfce7;
+  border-color: #bbf7d0;
+}
+
+.workflow-step-card strong,
+.workflow-step-card span {
+  display: block;
+}
+
+.workflow-step-card strong {
+  color: #0f172a;
+  font-size: 16px;
+}
+
+.workflow-step-card span {
+  margin-top: 5px;
+  color: #64748b;
+  line-height: 1.55;
 }
 
 .detail-summary-grid {
@@ -1748,8 +1834,22 @@ body {
     gap: 14px;
   }
 
-  .detail-hero h2.ant-typography {
+  .detail-title-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .detail-title-row h2.ant-typography {
     font-size: 30px;
+  }
+
+  .workflow-step-card {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .workflow-step-card > .ant-space {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 
   .detail-summary-grid,
