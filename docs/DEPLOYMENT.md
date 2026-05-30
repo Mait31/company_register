@@ -58,18 +58,6 @@ sh deploy/scripts/deploy.sh
 
 脚本会自动执行 `git pull --ff-only`，然后构建并启动服务。
 
-如果只更新前端：
-
-```bash
-sh deploy/scripts/deploy.sh frontend
-```
-
-如果只更新后端：
-
-```bash
-sh deploy/scripts/deploy.sh backend
-```
-
 也可以手动执行：
 
 ```bash
@@ -147,18 +135,6 @@ sh deploy/scripts/backup_storage.sh
 
 ```bash
 sh deploy/scripts/deploy.sh
-```
-
-只更新前端：
-
-```bash
-sh deploy/scripts/deploy.sh frontend
-```
-
-只更新后端：
-
-```bash
-sh deploy/scripts/deploy.sh backend
 ```
 
 手动方式：
