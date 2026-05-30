@@ -581,7 +581,7 @@ export function AdminOrderDetailPage() {
               <strong>客户资料核对</strong>
               <span>检查公司、股东、法人和联系方式。无误后确认，进入委托书材料收集。</span>
             </div>
-            <Space>
+            <Space className="workflow-step-action">
               <StatusTag status={detail.status} />
               {customerInfoConfirmed ? (
                 <Tag color="green">已确认</Tag>
@@ -599,18 +599,20 @@ export function AdminOrderDetailPage() {
               <strong>委托书材料收集</strong>
               <span>客户资料确认后，手动发起护照翻译件、PIN 码、落地签三项材料上传。</span>
             </div>
-            {materials?.total ? (
-              <Button onClick={() => setShareOpen(true)}>分享上传链接</Button>
-            ) : (
-              <Button
-                type="primary"
-                disabled={!customerInfoConfirmed}
-                loading={startingMaterials}
-                onClick={() => void startMaterials()}
-              >
-                发起委托书材料收集
-              </Button>
-            )}
+            <div className="workflow-step-action">
+              {materials?.total ? (
+                <Button onClick={() => setShareOpen(true)}>分享链接</Button>
+              ) : (
+                <Button
+                  type="primary"
+                  disabled={!customerInfoConfirmed}
+                  loading={startingMaterials}
+                  onClick={() => void startMaterials()}
+                >
+                  发起收集
+                </Button>
+              )}
+            </div>
           </section>
         </div>
       </Card>
@@ -841,15 +843,6 @@ export function AdminOrderEditPage() {
           <Typography.Title level={2}>编辑登记信息</Typography.Title>
           <Typography.Text type="secondary">这里用于修正客户提交内容，确认无误后归档。</Typography.Text>
         </div>
-        <Button
-          onClick={() => {
-            const values = form.getFieldsValue()
-            void saveDetail({ ...values, status: 'completed' })
-          }}
-          loading={saving}
-        >
-          保存并归档
-        </Button>
       </section>
 
       <Card className="edit-page-card">
@@ -911,8 +904,15 @@ export function AdminOrderEditPage() {
           </div>
           <div className="edit-action-row">
             <Button onClick={() => navigate(`/admin/orders/${detail.id}`)}>取消</Button>
-            <Button type="primary" htmlType="submit" loading={saving}>
-              保存资料
+            <Button
+              type="primary"
+              loading={saving}
+              onClick={() => {
+                const values = form.getFieldsValue()
+                void saveDetail({ ...values, status: 'completed' })
+              }}
+            >
+              保存并归档
             </Button>
           </div>
         </Form>

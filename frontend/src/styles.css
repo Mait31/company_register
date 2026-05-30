@@ -911,6 +911,27 @@ body {
   line-height: 1.55;
 }
 
+.workflow-step-action {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 150px;
+}
+
+.workflow-step-action .ant-btn {
+  min-width: 104px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-weight: 760;
+  box-shadow: none;
+}
+
+.workflow-step-action .ant-btn-primary {
+  box-shadow: 0 8px 16px rgba(22, 119, 255, 0.16);
+}
+
 .detail-summary-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1847,9 +1868,18 @@ body {
     grid-template-columns: 38px minmax(0, 1fr);
   }
 
+  .workflow-step-action,
   .workflow-step-card > .ant-space {
     grid-column: 1 / -1;
     width: 100%;
+  }
+
+  .workflow-step-action {
+    justify-content: stretch;
+  }
+
+  .workflow-step-action .ant-btn {
+    flex: 1;
   }
 
   .detail-summary-grid,
