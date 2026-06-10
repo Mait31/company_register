@@ -1,0 +1,35 @@
+KG_POWER_ATTORNEY_CONFIG = {
+    "notary": {
+        "place_line": "Кыргызская Республика, город Бишкек, улица Ахунбаева 17 Б",
+        "phone_line": "Тел: +996 (555) 57-03-52, +996 (500) 57-03-52",
+    },
+    "agent": {
+        "full_name_ru": "Улужбек уулу Уланбек",
+        "birth_date_text": "27.11.1995",
+        "pin": "22711199501290",
+        "id_card_number": "10148557",
+        "id_card_issued_by": "МКК 211041",
+        "id_card_issue_date": "08.01.2019",
+        "registration_address": "г. Бишкек, Свердловский район, ул. Колбаева, д. 34, кв. 30",
+    },
+    "translator": {
+        "full_name_ru": "Кадырбаев Ильиз Кадырбаевич",
+        "birth_date_text": "23.07.1996",
+        "pin": "22307199601723",
+        "id_card_number": "1621361",
+        "id_card_issued_by": "МКК 211011",
+        "id_card_issue_date": "25.02.2020",
+        "education_institution": "Синьский Университет Китайской Народной Республики",
+        "certificate_date": "июля месяца 2017",
+        "certificate_registration_number": "2017019",
+    },
+    "validity": {
+        "period_text": "три месяца",
+    },
+    "notary_certification": {
+        "note": "[[由公证员系统生成正式认证段落]]",
+        "registry_number": "[[由公证员系统生成]]",
+        "state_duty_amount": "200",
+        "notary_service_fee_amount": "600",
+    },
+}

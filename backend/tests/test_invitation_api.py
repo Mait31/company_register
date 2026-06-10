@@ -60,21 +60,6 @@ def full_power_attorney_fields() -> dict:
         "principal_registration_address": "г. Бишкек",
         "principal_pin": "12345678901234",
         "nationality": "中国",
-        "agent_full_name_ru": "IVAN IVANOV",
-        "agent_birth_date_text": "02 февраля 1988",
-        "agent_pin": "20000000000000",
-        "agent_id_card_number": "ID1234567",
-        "agent_id_card_issued_by": "MKK",
-        "agent_id_card_issue_date": "02.02.2020",
-        "agent_registration_address": "г. Бишкек",
-        "translator_full_name_ru": "PETR PETROV",
-        "translator_birth_date_text": "03 марта 1989",
-        "translator_pin": "30000000000000",
-        "translator_id_card_number": "ID7654321",
-        "translator_id_card_issued_by": "MKK",
-        "translator_id_card_issue_date": "03.03.2020",
-        "translator_education_institution": "Kyrgyz National University",
-        "translator_certificate_date": "03.03.2021",
         "notary_date_text": "10 июня 2026",
     }
 
@@ -399,6 +384,9 @@ def test_generate_documents_autofills_kg_power_attorney_draft(tmp_path) -> None:
         assert "INTERNAL DRAFT" in content
         assert "SUN BA" in content
         assert "Test KG Company LLC" in content
+        assert "Улужбек уулу Уланбек" in content
+        assert "Кадырбаев Ильиз Кадырбаевич" in content
+        assert "ул. Колбаева" in content
         assert "公证员系统生成" in content
 
         downloaded = client.get(document["download_url"])

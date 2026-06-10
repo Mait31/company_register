@@ -574,6 +574,29 @@ export function AdminOrderDetailPage() {
     }
   }
 
+  const downloadGeneratedDocument = async (generatedDocument: GeneratedDocument) => {
+    try {
+      const response = await fetch(generatedDocument.download_url, {
+        headers: adminHeaders(),
+      })
+      if (!response.ok) {
+        const data = await response.json().catch(() => null)
+        throw new Error(data?.detail || '下载草稿失败')
+      }
+
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = generatedDocument.document_name
+      link.click()
+      URL.revokeObjectURL(url)
+      message.success('草稿已开始下载')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '下载草稿失败')
+    }
+  }
+
   if (loading || !detail) {
     return <Card className="detail-page-card">资料加载中...</Card>
   }
@@ -762,10 +785,10 @@ export function AdminOrderDetailPage() {
               )}
             </div>
             <Space wrap>
-              {generatedDocuments.documents.map((document) => (
+              {generatedDocuments.documents.map((generatedDocument) => (
                 <Button
-                  key={document.file_id}
-                  onClick={() => window.open(document.download_url, '_blank', 'noopener,noreferrer')}
+                  key={generatedDocument.file_id}
+                  onClick={() => void downloadGeneratedDocument(generatedDocument)}
                 >
                   下载草稿
                 </Button>

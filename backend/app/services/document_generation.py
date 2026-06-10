@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+import re
 from uuid import uuid4
 
 from jinja2 import Template
@@ -17,11 +18,13 @@ from app.models.user import Customer, User
 from app.models.wechat import RegistrationInvitation
 from app.modules.intake.materials import REQUIRED_MATERIALS, existing_invitation_materials
 from app.modules.intake.repository import latest_participant
+from app.services.power_attorney_config import KG_POWER_ATTORNEY_CONFIG
 
 
 KG_POWER_OF_ATTORNEY_TEMPLATE_ID = "kg_power_attorney_ru_v1"
 KG_POWER_OF_ATTORNEY_DOCUMENT_TYPE = "kg_power_attorney_draft"
 KG_POWER_OF_ATTORNEY_DOCUMENT_NAME = "吉尔吉斯公司注册委托书（内部草稿）"
+FIELD_KEY_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
 
 
 class DocumentGenerationError(ValueError):
@@ -165,6 +168,8 @@ def build_template_context(
         for item in keys_or_values:
             if isinstance(item, str) and item in invitation_fields:
                 values.append(invitation_fields.get(item))
+            elif isinstance(item, str) and FIELD_KEY_PATTERN.match(item):
+                continue
             else:
                 values.append(item)
         return first_present(*values) or pending(label, missing_fields)
@@ -198,11 +203,31 @@ def build_template_context(
     else:
         company_name_clause = "с фирменным наименованием на усмотрение поверенного"
 
-    agent_full_name = field("受托人俄文姓名", "agent_full_name_ru", "proxy_full_name_ru")
-    translator_full_name = field("翻译人员俄文姓名", "translator_full_name_ru")
+    notary_config = KG_POWER_ATTORNEY_CONFIG["notary"]
+    agent_config = KG_POWER_ATTORNEY_CONFIG["agent"]
+    translator_config = KG_POWER_ATTORNEY_CONFIG["translator"]
+    validity_config = KG_POWER_ATTORNEY_CONFIG["validity"]
+    certification_config = KG_POWER_ATTORNEY_CONFIG["notary_certification"]
+
+    notary_place_line = first_present(
+        invitation_fields.get("notary_place_line"),
+        invitation_fields.get("notary_place"),
+        f"{notary_config['place_line']}\n{notary_config['phone_line']}",
+    )
+    agent_full_name = field(
+        "受托人俄文姓名",
+        "agent_full_name_ru",
+        "proxy_full_name_ru",
+        agent_config["full_name_ru"],
+    )
+    translator_full_name = field(
+        "翻译人员俄文姓名",
+        "translator_full_name_ru",
+        translator_config["full_name_ru"],
+    )
 
     context = {
-        "notary_place_line": field("公证地点", "notary_place_line", "notary_place", "г. Бишкек"),
+        "notary_place_line": field("公证地点", notary_place_line),
         "notary_date_text": field("公证日期", "notary_date_text"),
         "principal_country_genitive": principal_country,
         "principal_full_name_ru": principal_name,
@@ -230,28 +255,28 @@ def build_template_context(
             "имеющий регистрацию иностранного гражданина",
         ),
         "agent_full_name_ru": agent_full_name,
-        "agent_birth_date_text": field("受托人出生日期文字", "agent_birth_date_text", "agent_birth_date"),
-        "agent_pin": field("受托人 PIN", "agent_pin", "proxy_pin"),
-        "agent_id_card_number": field("受托人身份证 ID", "agent_id_card_number", "proxy_id_card_number"),
-        "agent_id_card_issued_by": field("受托人身份证签发机关", "agent_id_card_issued_by", "proxy_id_card_issued_by"),
-        "agent_id_card_issue_date": field("受托人身份证签发日期", "agent_id_card_issue_date", "proxy_id_card_issue_date"),
-        "agent_registration_address": field("受托人登记地址", "agent_registration_address", "proxy_registration_address"),
+        "agent_birth_date_text": field("受托人出生日期文字", "agent_birth_date_text", "agent_birth_date", agent_config["birth_date_text"]),
+        "agent_pin": field("受托人 PIN", "agent_pin", "proxy_pin", agent_config["pin"]),
+        "agent_id_card_number": field("受托人身份证 ID", "agent_id_card_number", "proxy_id_card_number", agent_config["id_card_number"]),
+        "agent_id_card_issued_by": field("受托人身份证签发机关", "agent_id_card_issued_by", "proxy_id_card_issued_by", agent_config["id_card_issued_by"]),
+        "agent_id_card_issue_date": field("受托人身份证签发日期", "agent_id_card_issue_date", "proxy_id_card_issue_date", agent_config["id_card_issue_date"]),
+        "agent_registration_address": field("受托人登记地址", "agent_registration_address", "proxy_registration_address", agent_config["registration_address"]),
         "company_name_clause": company_name_clause,
-        "validity_period_text": field("委托书有效期", "validity_period_text", "три месяца"),
+        "validity_period_text": field("委托书有效期", "validity_period_text", validity_config["period_text"]),
         "translator_full_name_ru": translator_full_name,
-        "translator_birth_date_text": field("翻译人员出生日期文字", "translator_birth_date_text"),
-        "translator_pin": field("翻译人员 PIN", "translator_pin"),
-        "translator_id_card_number": field("翻译人员身份证 ID", "translator_id_card_number"),
-        "translator_id_card_issued_by": field("翻译人员身份证签发机关", "translator_id_card_issued_by"),
-        "translator_id_card_issue_date": field("翻译人员身份证签发日期", "translator_id_card_issue_date"),
-        "translator_education_institution": field("翻译人员证书/学历机构", "translator_education_institution"),
-        "translator_certificate_date": field("翻译人员证书日期", "translator_certificate_date"),
+        "translator_birth_date_text": field("翻译人员出生日期文字", "translator_birth_date_text", translator_config["birth_date_text"]),
+        "translator_pin": field("翻译人员 PIN", "translator_pin", translator_config["pin"]),
+        "translator_id_card_number": field("翻译人员身份证 ID", "translator_id_card_number", translator_config["id_card_number"]),
+        "translator_id_card_issued_by": field("翻译人员身份证签发机关", "translator_id_card_issued_by", translator_config["id_card_issued_by"]),
+        "translator_id_card_issue_date": field("翻译人员身份证签发日期", "translator_id_card_issue_date", translator_config["id_card_issue_date"]),
+        "translator_education_institution": field("翻译人员证书/学历机构", "translator_education_institution", translator_config["education_institution"]),
+        "translator_certificate_date": field("翻译人员证书日期", "translator_certificate_date", translator_config["certificate_date"]),
         "agent_full_name_short": short_name(agent_full_name),
         "principal_signature_name": principal_name,
-        "notary_certification_note": "[[由公证员系统生成正式认证段落]]",
-        "notary_registry_number": "[[由公证员系统生成]]",
-        "state_duty_amount": "[[由公证员系统生成]]",
-        "notary_service_fee_amount": "[[由公证员系统生成]]",
+        "notary_certification_note": certification_config["note"],
+        "notary_registry_number": certification_config["registry_number"],
+        "state_duty_amount": certification_config["state_duty_amount"],
+        "notary_service_fee_amount": certification_config["notary_service_fee_amount"],
         "missing_fields": missing_fields,
     }
     return context, missing_fields
