@@ -1671,6 +1671,37 @@ body {
   font-size: 16px;
 }
 
+.generated-document-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 16px;
+  background: #f8fbff;
+  border: 1px solid #bfdbfe;
+  border-radius: 18px;
+}
+
+.generated-document-panel strong,
+.generated-document-panel span {
+  display: block;
+}
+
+.generated-document-panel strong {
+  color: #0f172a;
+  font-size: 16px;
+}
+
+.generated-document-panel span {
+  margin-top: 5px;
+  color: #64748b;
+  line-height: 1.55;
+}
+
+.generated-document-panel .ant-btn {
+  border-radius: 999px;
+  font-weight: 700;
+}
+
 @media (max-width: 640px) {
   .app-header {
     height: auto;

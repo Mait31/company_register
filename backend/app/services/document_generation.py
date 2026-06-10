@@ -10,10 +10,12 @@ from app.core.config import settings
 from app.models.company import CompanyDraft
 from app.models.document import GeneratedDocument
 from app.models.file import StoredFile
+from app.models.enums import MaterialStatus
 from app.models.order import RegistrationOrder
 from app.models.person import Person
 from app.models.user import Customer, User
 from app.models.wechat import RegistrationInvitation
+from app.modules.intake.materials import REQUIRED_MATERIALS, existing_invitation_materials
 from app.modules.intake.repository import latest_participant
 
 
@@ -150,7 +152,7 @@ def pending(label: str, missing_fields: list[str]) -> str:
 
 
 def build_template_context(
-    order: RegistrationOrder,
+    order: RegistrationOrder | None,
     customer: Customer | None,
     company: CompanyDraft | None,
     person: Person | None,
@@ -276,6 +278,75 @@ def render_kg_power_attorney_draft(db: Session, order: RegistrationOrder) -> Ren
     context, missing_fields = build_template_context(order, customer, company, person, invitation_fields)
     content = Template(KG_POWER_OF_ATTORNEY_TEMPLATE).render(**context)
     return RenderedDocument(content=content, missing_fields=missing_fields)
+
+
+def assert_invitation_materials_approved(db: Session, invitation: RegistrationInvitation) -> None:
+    required_types = {item["material_type"] for item in REQUIRED_MATERIALS}
+    materials = existing_invitation_materials(db, invitation)
+    by_type = {material.material_type: material for material in materials}
+
+    if required_types - set(by_type):
+        raise DocumentGenerationError("委托书材料收集尚未发起")
+
+    for item in REQUIRED_MATERIALS:
+        material = by_type[item["material_type"]]
+        if not material.file_id:
+            raise DocumentGenerationError(f"{item['material_name']}尚未上传")
+        if material.status != MaterialStatus.APPROVED.value:
+            raise DocumentGenerationError(f"{item['material_name']}尚未审核通过")
+
+
+def render_invitation_power_attorney_draft(db: Session, invitation: RegistrationInvitation) -> RenderedDocument:
+    participant = latest_participant(db, invitation.id)
+    invitation_fields = participant.submitted_fields_json if participant and participant.submitted_fields_json else {}
+    context, missing_fields = build_template_context(
+        order=None,
+        customer=None,
+        company=None,
+        person=None,
+        invitation_fields=invitation_fields,
+    )
+    content = Template(KG_POWER_OF_ATTORNEY_TEMPLATE).render(**context)
+    return RenderedDocument(content=content, missing_fields=missing_fields)
+
+
+def save_invitation_generated_text_document(
+    db: Session,
+    invitation: RegistrationInvitation,
+    current_user: User,
+    rendered: RenderedDocument,
+) -> StoredFile:
+    target_dir = Path(settings.storage_root) / "generated_documents" / "invitations" / str(invitation.id)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    target_path = target_dir / f"{KG_POWER_OF_ATTORNEY_TEMPLATE_ID}_{uuid4().hex}.md"
+    target_path.write_text(rendered.content, encoding="utf-8")
+
+    stored_file = StoredFile(
+        order_id=invitation.order_id,
+        owner_type="invitation_generated_document",
+        owner_id=invitation.id,
+        file_name=f"{KG_POWER_OF_ATTORNEY_DOCUMENT_NAME}.md",
+        file_ext="md",
+        mime_type="text/markdown",
+        file_size=target_path.stat().st_size,
+        storage_path=str(target_path),
+        uploaded_by=current_user.id,
+    )
+    db.add(stored_file)
+    db.commit()
+    db.refresh(stored_file)
+    return stored_file
+
+
+def generate_invitation_documents(
+    db: Session,
+    invitation: RegistrationInvitation,
+    current_user: User,
+) -> tuple[list[StoredFile], list[str]]:
+    assert_invitation_materials_approved(db, invitation)
+    rendered = render_invitation_power_attorney_draft(db, invitation)
+    stored_file = save_invitation_generated_text_document(db, invitation, current_user, rendered)
+    return [stored_file], rendered.missing_fields
 
 
 def save_generated_text_document(

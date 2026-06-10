@@ -382,25 +382,28 @@ def test_generate_documents_autofills_kg_power_attorney_draft(tmp_path) -> None:
             )
             assert reviewed.status_code == 200
 
-        converted = client.post(f"/api/admin/invitations/{invitation['id']}/convert-to-order")
-        assert converted.status_code == 200
-        order_id = converted.json()["id"]
-
-        generated = client.post(f"/api/admin/orders/{order_id}/generate-documents")
+        generated = client.post(f"/api/admin/invitations/{invitation['id']}/generate-documents")
         assert generated.status_code == 200
         body = generated.json()
+        assert body["invitation_id"] == invitation["id"]
         assert body["status"] == "generated"
-        assert body["documents"][0]["document_type"] == "kg_power_attorney_draft"
-        assert body["documents"][0]["template_id"] == "kg_power_attorney_ru_v1"
+        document = body["documents"][0]
+        assert document["document_type"] == "kg_power_attorney_draft"
+        assert document["template_id"] == "kg_power_attorney_ru_v1"
+        assert document["download_url"] == f"/api/admin/invitations/{invitation['id']}/generated-documents/{document['file_id']}"
         assert body["missing_fields"] == []
 
-        generated_files = list(tmp_path.glob(f"generated_documents/{order_id}/*.md"))
+        generated_files = list(tmp_path.glob(f"generated_documents/invitations/{invitation['id']}/*.md"))
         assert len(generated_files) == 1
         content = generated_files[0].read_text(encoding="utf-8")
         assert "INTERNAL DRAFT" in content
         assert "SUN BA" in content
         assert "Test KG Company LLC" in content
         assert "公证员系统生成" in content
+
+        downloaded = client.get(document["download_url"])
+        assert downloaded.status_code == 200
+        assert "SUN BA" in downloaded.text
     finally:
         settings.storage_root = original_storage_root
         app.dependency_overrides.clear()

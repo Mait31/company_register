@@ -64,6 +64,23 @@ type MaterialSummary = {
   materials: InvitationMaterial[]
 }
 
+type GeneratedDocument = {
+  file_id: number
+  document_type: string
+  document_name: string
+  template_id: string
+  generated_at: string
+  download_url: string
+}
+
+type GenerateDocumentsResult = {
+  invitation_id: number
+  status: string
+  message: string
+  missing_fields: string[]
+  documents: GeneratedDocument[]
+}
+
 type FollowFormValues = {
   status: string
   remark?: string
@@ -476,9 +493,13 @@ export function AdminOrderDetailPage() {
   const [materials, setMaterials] = useState<MaterialSummary | null>(null)
   const [loading, setLoading] = useState(false)
   const [startingMaterials, setStartingMaterials] = useState(false)
+  const [generatingDocuments, setGeneratingDocuments] = useState(false)
+  const [generatedDocuments, setGeneratedDocuments] = useState<GenerateDocumentsResult | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
   const shareQrRef = useRef<HTMLDivElement>(null)
   const customerInfoConfirmed = detail?.status === 'completed'
+  const materialsApproved = Boolean(materials?.total && materials.approved === materials.total)
+  const documentsGenerated = Boolean(generatedDocuments?.documents.length)
 
   useEffect(() => {
     if (!id) return
@@ -487,6 +508,7 @@ export function AdminOrderDetailPage() {
       .then(([detailData, materialData]) => {
         setDetail(detailData)
         setMaterials(materialData)
+        setGeneratedDocuments(null)
       })
       .catch((error) => message.error(error instanceof Error ? error.message : '加载资料详情失败'))
       .finally(() => setLoading(false))
@@ -533,6 +555,25 @@ export function AdminOrderDetailPage() {
     }
   }
 
+  const generateDocuments = async () => {
+    if (!id || !materialsApproved) return
+    setGeneratingDocuments(true)
+    try {
+      const response = await fetch(`/api/admin/invitations/${id}/generate-documents`, {
+        method: 'POST',
+        headers: adminHeaders(),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data?.detail || '委托书草稿生成失败')
+      setGeneratedDocuments(data as GenerateDocumentsResult)
+      message.success('委托书内部草稿已生成')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '委托书草稿生成失败')
+    } finally {
+      setGeneratingDocuments(false)
+    }
+  }
+
   if (loading || !detail) {
     return <Card className="detail-page-card">资料加载中...</Card>
   }
@@ -576,11 +617,24 @@ export function AdminOrderDetailPage() {
             <div className="workflow-step-index">2</div>
             <div>
               <strong>委托书材料收集</strong>
-              <span>客户资料确认后，手动发起护照翻译件、PIN 码、落地签三项材料上传。</span>
+              <span>客户资料确认后，手动发起护照翻译件、PIN 码、落地签三项材料上传并审核。</span>
             </div>
             <div className="workflow-step-action">
-              <Button disabled className={materials?.total ? 'workflow-state-button is-done' : 'workflow-state-button'}>
-                {materials?.total ? '已发起' : '待发起'}
+              <Button disabled className={materialsApproved ? 'workflow-state-button is-done' : 'workflow-state-button'}>
+                {materialsApproved ? '已通过' : materials?.total ? '审核中' : '待发起'}
+              </Button>
+            </div>
+          </section>
+
+          <section className={`workflow-step-card ${documentsGenerated ? 'done' : materialsApproved ? 'active' : 'locked'}`}>
+            <div className="workflow-step-index">3</div>
+            <div>
+              <strong>生成委托书</strong>
+              <span>三项材料审核通过后，直接生成吉尔吉斯公司注册委托书内部草稿。</span>
+            </div>
+            <div className="workflow-step-action">
+              <Button disabled className={documentsGenerated ? 'workflow-state-button is-done' : 'workflow-state-button'}>
+                {documentsGenerated ? '已生成' : materialsApproved ? '可生成' : '待材料'}
               </Button>
             </div>
           </section>
@@ -629,6 +683,14 @@ export function AdminOrderDetailPage() {
                   {materials.approved}/{materials.total} 已通过
                 </Tag>
                 <Button onClick={() => setShareOpen(true)}>分享上传链接</Button>
+                <Button
+                  type="primary"
+                  disabled={!materialsApproved}
+                  loading={generatingDocuments}
+                  onClick={() => void generateDocuments()}
+                >
+                  生成委托书
+                </Button>
               </>
             ) : (
               <Button
@@ -689,6 +751,36 @@ export function AdminOrderDetailPage() {
             </span>
           </div>
         )}
+        {generatedDocuments ? (
+          <div className="generated-document-panel">
+            <div>
+              <strong>{generatedDocuments.message}</strong>
+              {generatedDocuments.missing_fields.length ? (
+                <span>仍有 {generatedDocuments.missing_fields.length} 个字段需要人工补齐。</span>
+              ) : (
+                <span>模板字段已自动填充完成，可下载核对。</span>
+              )}
+            </div>
+            <Space wrap>
+              {generatedDocuments.documents.map((document) => (
+                <Button
+                  key={document.file_id}
+                  onClick={() => window.open(document.download_url, '_blank', 'noopener,noreferrer')}
+                >
+                  下载草稿
+                </Button>
+              ))}
+            </Space>
+            {generatedDocuments.missing_fields.length ? (
+              <Alert
+                type="warning"
+                message="缺失字段"
+                description={generatedDocuments.missing_fields.join('、')}
+                showIcon
+              />
+            ) : null}
+          </div>
+        ) : null}
       </Card>
 
       <Modal
