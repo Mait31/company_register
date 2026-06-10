@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Alert, Button, Card, DatePicker, Form, Input, Radio, Result, Spin, Typography, Upload, message } from 'antd'
+import { Alert, Button, Card, DatePicker, Form, Input, Radio, Result, Spin, Typography, message } from 'antd'
 import { useLocation, useParams } from 'react-router-dom'
 
 type Invitation = {
@@ -83,6 +83,8 @@ type ShareOptions = {
 }
 
 const publicIntakeToken = 'company-registration'
+const maxMaterialUploadSize = 20 * 1024 * 1024
+const allowedMaterialExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'webp']
 
 function publicIntakeInvitation(): Invitation {
   return {
@@ -305,6 +307,7 @@ export function InvitationPage() {
     try {
       const formData = new FormData()
       formData.append('upload', file)
+      message.loading({ content: '正在上传材料...', key: `upload-${materialType}`, duration: 0 })
       const response = await fetch(`/api/invitations/${activeToken}/materials/${materialType}/files`, {
         method: 'POST',
         body: formData,
@@ -314,12 +317,30 @@ export function InvitationPage() {
         throw new Error(data?.detail || '上传失败，请稍后重试')
       }
       setSummary((await response.json()) as MaterialSummary)
-      message.success('材料已上传')
+      message.success({ content: '材料已上传', key: `upload-${materialType}` })
     } catch (err) {
+      message.destroy(`upload-${materialType}`)
       setError(err instanceof Error ? err.message : '上传失败')
     } finally {
       setUploadingType(null)
     }
+  }
+
+  const handleMaterialFileChange = (materialType: string, fileList: FileList | null) => {
+    const file = fileList?.[0]
+    if (!file) return
+
+    const extension = file.name.split('.').pop()?.toLowerCase()
+    if (!extension || !allowedMaterialExtensions.includes(extension)) {
+      setError('仅支持 PDF、JPG、PNG、WEBP 文件')
+      return
+    }
+    if (file.size > maxMaterialUploadSize) {
+      setError('文件不能超过 20MB')
+      return
+    }
+
+    void uploadMaterial(materialType, file)
   }
 
   const submitMaterials = async () => {
@@ -611,19 +632,24 @@ export function InvitationPage() {
                   <Alert type="warning" message={material.review_comment} className="material-review-alert" />
                 ) : null}
 
-                <Upload
+                <input
                   accept=".pdf,.jpg,.jpeg,.png,.webp"
-                  beforeUpload={(file) => {
-                    void uploadMaterial(material.material_type, file)
-                    return Upload.LIST_IGNORE
+                  className="material-file-input"
+                  disabled={uploadingType === material.material_type}
+                  id={`material-file-${material.material_type}`}
+                  onChange={(event) => {
+                    handleMaterialFileChange(material.material_type, event.target.files)
+                    event.target.value = ''
                   }}
-                  maxCount={1}
-                  showUploadList={false}
+                  type="file"
+                />
+                <Button
+                  block
+                  loading={uploadingType === material.material_type}
+                  onClick={() => document.getElementById(`material-file-${material.material_type}`)?.click()}
                 >
-                  <Button block loading={uploadingType === material.material_type}>
-                    {material.file ? '重新上传' : '选择文件'}
-                  </Button>
-                </Upload>
+                  {material.file ? '重新上传' : '选择文件'}
+                </Button>
               </article>
             ))}
           </div>

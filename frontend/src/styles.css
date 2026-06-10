@@ -1578,6 +1578,10 @@ body {
   font-weight: 800;
 }
 
+.material-file-input {
+  display: none;
+}
+
 .material-success-card {
   width: min(100%, 430px);
   border: 0;
