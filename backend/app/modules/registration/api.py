@@ -6,7 +6,9 @@ from app.db.session import get_db
 from app.models.user import User
 from app.models.wechat import RegistrationInvitation
 from app.modules.registration.service import (
+    InvitationConversionError,
     apply_registration_update,
+    convert_registration_invitation_to_order,
     create_registration_invitation,
     invitation_detail,
     list_registration_invitations,
@@ -18,6 +20,7 @@ from app.schemas.invitation import (
     InvitationCreate,
     InvitationRead,
 )
+from app.schemas.order import OrderRead
 
 router = APIRouter(prefix="/admin/invitations", tags=["admin"])
 
@@ -68,9 +71,12 @@ def update_admin_invitation(
 def convert_invitation_to_order(
     invitation_id: int,
     db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
-) -> dict:
+    current_user: User = Depends(get_current_user),
+) -> OrderRead:
     invitation = db.get(RegistrationInvitation, invitation_id)
     if not invitation:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="邀请不存在")
-    return {"invitation_id": invitation.id, "status": "planned", "message": "转正式工单接口已预留"}
+    try:
+        return convert_registration_invitation_to_order(db, invitation, current_user)
+    except InvitationConversionError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc

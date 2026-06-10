@@ -45,6 +45,40 @@ def make_client() -> TestClient:
     return TestClient(app)
 
 
+def full_power_attorney_fields() -> dict:
+    return {
+        "name": "孙八",
+        "mobile": "13400000000",
+        "company_name_ru": "Test KG Company LLC",
+        "full_company_name": "自动填充公司",
+        "principal_full_name_ru": "SUN BA",
+        "principal_birth_date_text": "01 января 1990",
+        "principal_passport_country_code": "КНР",
+        "principal_passport_number": "E12345678",
+        "principal_passport_issued_by": "Exit Entry Administration",
+        "principal_passport_issue_date": "01.01.2020",
+        "principal_registration_address": "г. Бишкек",
+        "principal_pin": "12345678901234",
+        "nationality": "中国",
+        "agent_full_name_ru": "IVAN IVANOV",
+        "agent_birth_date_text": "02 февраля 1988",
+        "agent_pin": "20000000000000",
+        "agent_id_card_number": "ID1234567",
+        "agent_id_card_issued_by": "MKK",
+        "agent_id_card_issue_date": "02.02.2020",
+        "agent_registration_address": "г. Бишкек",
+        "translator_full_name_ru": "PETR PETROV",
+        "translator_birth_date_text": "03 марта 1989",
+        "translator_pin": "30000000000000",
+        "translator_id_card_number": "ID7654321",
+        "translator_id_card_issued_by": "MKK",
+        "translator_id_card_issue_date": "03.03.2020",
+        "translator_education_institution": "Kyrgyz National University",
+        "translator_certificate_date": "03.03.2021",
+        "notary_date_text": "10 июня 2026",
+    }
+
+
 def test_invitation_entry_saves_participant_fields() -> None:
     client = make_client()
     try:
@@ -187,6 +221,186 @@ def test_invitation_material_upload_review_and_public_summary(tmp_path) -> None:
         public_summary = client.get(f"/api/public/invitations/{token}/materials")
         assert public_summary.status_code == 200
         assert public_summary.json()["materials"][0]["file"]["file_name"] == "passport.pdf"
+    finally:
+        settings.storage_root = original_storage_root
+        app.dependency_overrides.clear()
+
+
+def test_convert_invitation_to_order_requires_approved_materials(tmp_path) -> None:
+    client = make_client()
+    original_storage_root = settings.storage_root
+    settings.storage_root = str(tmp_path)
+    try:
+        created = client.post("/api/admin/invitations", json={"remark": "转正式工单"})
+        assert created.status_code == 200
+        invitation = created.json()
+
+        submitted = client.post(
+            f"/api/invitations/{invitation['token']}/participants",
+            json={
+                "role": "customer",
+                "name": "赵六",
+                "mobile": "13600000000",
+                "full_company_name": "桥接测试公司",
+                "registered_capital": "100000 USD",
+                "director_name": "赵六",
+                "director_phone": "13600000000",
+                "need_bank_account": True,
+            },
+        )
+        assert submitted.status_code == 200
+
+        updated = client.patch(
+            f"/api/admin/invitations/{invitation['id']}",
+            json={"status": "completed"},
+        )
+        assert updated.status_code == 200
+
+        converted = client.post(f"/api/admin/invitations/{invitation['id']}/convert-to-order")
+        assert converted.status_code == 400
+        assert "委托书材料" in converted.json()["detail"]
+    finally:
+        settings.storage_root = original_storage_root
+        app.dependency_overrides.clear()
+
+
+def test_convert_invitation_to_order_creates_registration_order(tmp_path) -> None:
+    client = make_client()
+    original_storage_root = settings.storage_root
+    settings.storage_root = str(tmp_path)
+    try:
+        created = client.post("/api/admin/invitations", json={"remark": "完整转单"})
+        assert created.status_code == 200
+        invitation = created.json()
+        token = invitation["token"]
+
+        submitted = client.post(
+            f"/api/invitations/{token}/participants",
+            json={
+                "role": "customer",
+                "name": "钱七",
+                "mobile": "13500000000",
+                "full_company_name": "正式工单公司",
+                "legal_address": "Bishkek",
+                "registered_capital": "250000 USD",
+                "director_name": "钱七",
+                "director_phone": "13500000000",
+                "director_address": "Bishkek",
+                "business_scope": "Trade service",
+                "tax_regime": "single_tax",
+                "need_bank_account": True,
+            },
+        )
+        assert submitted.status_code == 200
+
+        updated = client.patch(
+            f"/api/admin/invitations/{invitation['id']}",
+            json={"status": "completed"},
+        )
+        assert updated.status_code == 200
+
+        started = client.post(f"/api/admin/invitations/{invitation['id']}/materials/start")
+        assert started.status_code == 200
+
+        for material_type in ("passport_translation", "pin_code", "landing_signature"):
+            uploaded = client.post(
+                f"/api/invitations/{token}/materials/{material_type}/files",
+                files={"upload": (f"{material_type}.pdf", b"fake pdf", "application/pdf")},
+            )
+            assert uploaded.status_code == 200
+            reviewed = client.post(
+                f"/api/admin/invitations/{invitation['id']}/materials/{material_type}/review",
+                json={"status": "approved"},
+            )
+            assert reviewed.status_code == 200
+
+        converted = client.post(f"/api/admin/invitations/{invitation['id']}/convert-to-order")
+        assert converted.status_code == 200
+        order = converted.json()
+        assert order["id"] > 0
+        assert order["status"] == "draft"
+        assert order["order_no"].startswith("CR")
+
+        orders = client.get("/api/admin/orders")
+        assert orders.status_code == 200
+        assert len(orders.json()) == 1
+        assert orders.json()[0]["id"] == order["id"]
+
+        converted_again = client.post(f"/api/admin/invitations/{invitation['id']}/convert-to-order")
+        assert converted_again.status_code == 200
+        assert converted_again.json()["id"] == order["id"]
+
+        orders_again = client.get("/api/admin/orders")
+        assert len(orders_again.json()) == 1
+    finally:
+        settings.storage_root = original_storage_root
+        app.dependency_overrides.clear()
+
+
+def test_generate_documents_autofills_kg_power_attorney_draft(tmp_path) -> None:
+    client = make_client()
+    original_storage_root = settings.storage_root
+    settings.storage_root = str(tmp_path)
+    try:
+        created = client.post("/api/admin/invitations", json={"remark": "委托书自动填充"})
+        assert created.status_code == 200
+        invitation = created.json()
+        token = invitation["token"]
+
+        submitted = client.post(
+            f"/api/invitations/{token}/participants",
+            json={
+                "role": "customer",
+                "name": "孙八",
+                "mobile": "13400000000",
+                "full_company_name": "自动填充公司",
+            },
+        )
+        assert submitted.status_code == 200
+
+        updated = client.patch(
+            f"/api/admin/invitations/{invitation['id']}",
+            json={
+                "status": "completed",
+                "submitted_fields_json": full_power_attorney_fields(),
+            },
+        )
+        assert updated.status_code == 200
+
+        started = client.post(f"/api/admin/invitations/{invitation['id']}/materials/start")
+        assert started.status_code == 200
+
+        for material_type in ("passport_translation", "pin_code", "landing_signature"):
+            uploaded = client.post(
+                f"/api/invitations/{token}/materials/{material_type}/files",
+                files={"upload": (f"{material_type}.pdf", b"fake pdf", "application/pdf")},
+            )
+            assert uploaded.status_code == 200
+            reviewed = client.post(
+                f"/api/admin/invitations/{invitation['id']}/materials/{material_type}/review",
+                json={"status": "approved"},
+            )
+            assert reviewed.status_code == 200
+
+        converted = client.post(f"/api/admin/invitations/{invitation['id']}/convert-to-order")
+        assert converted.status_code == 200
+        order_id = converted.json()["id"]
+
+        generated = client.post(f"/api/admin/orders/{order_id}/generate-documents")
+        assert generated.status_code == 200
+        body = generated.json()
+        assert body["status"] == "generated"
+        assert body["documents"][0]["document_type"] == "kg_power_attorney_draft"
+        assert body["documents"][0]["template_id"] == "kg_power_attorney_ru_v1"
+        assert body["missing_fields"] == []
+
+        generated_files = list(tmp_path.glob(f"generated_documents/{order_id}/*.md"))
+        assert len(generated_files) == 1
+        content = generated_files[0].read_text(encoding="utf-8")
+        assert "INTERNAL DRAFT" in content
+        assert "SUN BA" in content
+        assert "Test KG Company LLC" in content
+        assert "公证员系统生成" in content
     finally:
         settings.storage_root = original_storage_root
         app.dependency_overrides.clear()

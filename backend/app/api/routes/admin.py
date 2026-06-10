@@ -9,6 +9,7 @@ from app.models.log import WorkflowLog
 from app.models.order import RegistrationOrder
 from app.models.user import Customer, User
 from app.schemas.order import OrderCreate, OrderRead, OrderStatusChange
+from app.services.document_generation import generate_order_documents
 from app.services.state_machine import InvalidStatusTransition, assert_transition_allowed
 
 router = APIRouter()
@@ -102,9 +103,31 @@ def change_order_status(
 @router.post("/orders/{order_id}/generate-documents")
 def generate_documents(
     order_id: int,
-    _: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> dict:
-    return {"order_id": order_id, "status": "planned", "message": "PDF 生成接口已预留"}
+    order = db.get(RegistrationOrder, order_id)
+    if not order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="工单不存在")
+
+    documents, missing_fields = generate_order_documents(db, order, current_user)
+    return {
+        "order_id": order.id,
+        "status": "generated",
+        "message": "已生成内部草稿文件；正式公证内容仍需由公证员系统出具",
+        "missing_fields": missing_fields,
+        "documents": [
+            {
+                "id": document.id,
+                "document_type": document.document_type,
+                "document_name": document.document_name,
+                "template_id": document.template_id,
+                "file_id": document.file_id,
+                "generated_at": document.generated_at,
+            }
+            for document in documents
+        ],
+    }
 
 
 @router.post("/orders/{order_id}/archive")
