@@ -6,6 +6,8 @@
 
 生产部署说明：[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
+Codex 长期项目记忆：[memory.md](memory.md)
+
 ## 技术栈
 
 - 前端：React + TypeScript + Vite + Ant Design
@@ -32,6 +34,23 @@
 - 当前 `/admin/orders` 前端页面实际是邀请资料台账，不是正式工单列表。
 - “资料归档”只表示前置客户资料核对完成，不等于公司最终归档。
 - 第一阶段不做复杂报价单和客户在线确认报价；价格由业务人员线下沟通，后续只保留轻量付费确认或办理启动状态。
+
+## Codex / Notion / GitHub 协作
+
+- Notion：记录项目中枢、任务单、验收标准、讨论纪要和人工决策。
+- Codex：在本机仓库执行开发、测试、文档更新和提交准备。
+- GitHub：保存代码历史、提交记录和部署触发事实。
+- `memory.md`：保存 Codex 每次接手前必须恢复的长期项目记忆。
+
+工作顺序：
+
+```text
+Notion 任务进入 Ready for Codex
+-> Codex 读取 README / DEVELOPMENT_RULES / memory.md
+-> Codex 在本机仓库开发和验证
+-> 使用 scripts\codex-push.ps1 提交并推送
+-> Notion 回写 commit、验证结果和下一步
+```
 
 ## 本地启动
 
