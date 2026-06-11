@@ -384,12 +384,19 @@ def test_generate_documents_autofills_kg_power_attorney_draft(tmp_path) -> None:
         with ZipFile(generated_files[0]) as docx:
             content = docx.read("word/document.xml").decode("utf-8")
         assert "{{" not in content
+        assert "ДОВЕРЕННОСТЬ" in content
+        assert "Кыргызской Республики" in content
         assert "SUN BA" in content
+        assert "01 января 1990" in content
+        assert "КНР" in content
+        assert "г. Бишкек" in content
         assert "Test KG Company LLC" in content
         assert "Улужбек уулу Уланбек" in content
         assert "Кадырбаев Ильиз Кадырбаевич" in content
         assert "ул. Колбаева" in content
         assert "由公证员系统生成" in content
+        assert "<w:br/>" in content
+        assert "岐" not in content
 
         downloaded = client.get(document["download_url"])
         assert downloaded.status_code == 200

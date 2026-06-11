@@ -213,8 +213,14 @@ def render_docx_template(context: dict[str, str]) -> bytes:
     if not KG_POWER_OF_ATTORNEY_DOCX_TEMPLATE_PATH.exists():
         raise DocumentGenerationError("委托书 Word 模板不存在")
 
+    def word_xml_value(value: object) -> str:
+        lines = str(value).splitlines()
+        if len(lines) <= 1:
+            return xml_escape(str(value))
+        return '</w:t><w:br/><w:t xml:space="preserve">'.join(xml_escape(line) for line in lines)
+
     replacements = {
-        f"{{{{{key}}}}}": xml_escape(str(value))
+        f"{{{{{key}}}}}": word_xml_value(value)
         for key, value in context.items()
         if key != "missing_fields"
     }
@@ -231,7 +237,7 @@ def render_docx_template(context: dict[str, str]) -> bytes:
 
                 def replace_unknown(match: re.Match[str]) -> str:
                     field_key = match.group(1)
-                    return xml_escape(f"[[待补：{field_key}]]")
+                    return word_xml_value(f"[[待补：{field_key}]]")
 
                 text = DOCX_PLACEHOLDER_PATTERN.sub(replace_unknown, text)
                 data = text.encode("utf-8")
