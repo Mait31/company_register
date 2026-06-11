@@ -104,7 +104,7 @@ def generate_invitation_power_attorney_documents(
     return {
         "invitation_id": invitation.id,
         "status": "generated",
-        "message": "已生成委托书内部草稿；正式公证内容仍需由公证员系统出具",
+        "message": "已基于 Word 模板生成委托书内部草稿；正式公证内容仍需由公证员系统出具",
         "missing_fields": missing_fields,
         "documents": [
             {

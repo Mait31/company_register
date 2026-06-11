@@ -31,5 +31,11 @@ KG_POWER_ATTORNEY_CONFIG = {
         "registry_number": "[[由公证员系统生成]]",
         "state_duty_amount": "200",
         "notary_service_fee_amount": "600",
+        "date_text": "[[由公证员系统生成]]",
+        "notary_full_name_ru": "[[由公证员系统生成]]",
+        "district": "[[由公证员系统生成]]",
+        "license_number": "[[由公证员系统生成]]",
+        "license_date": "[[由公证员系统生成]]",
+        "license_issuer": "[[由公证员系统生成]]",
     },
 }

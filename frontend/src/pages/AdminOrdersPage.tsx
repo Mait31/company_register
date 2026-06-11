@@ -564,11 +564,11 @@ export function AdminOrderDetailPage() {
         headers: adminHeaders(),
       })
       const data = await response.json()
-      if (!response.ok) throw new Error(data?.detail || '委托书草稿生成失败')
+      if (!response.ok) throw new Error(data?.detail || '委托书 Word 草稿生成失败')
       setGeneratedDocuments(data as GenerateDocumentsResult)
-      message.success('委托书内部草稿已生成')
+      message.success('委托书 Word 草稿已生成')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '委托书草稿生成失败')
+      message.error(error instanceof Error ? error.message : '委托书 Word 草稿生成失败')
     } finally {
       setGeneratingDocuments(false)
     }
@@ -581,7 +581,7 @@ export function AdminOrderDetailPage() {
       })
       if (!response.ok) {
         const data = await response.json().catch(() => null)
-        throw new Error(data?.detail || '下载草稿失败')
+        throw new Error(data?.detail || '下载 Word 草稿失败')
       }
 
       const blob = await response.blob()
@@ -593,7 +593,7 @@ export function AdminOrderDetailPage() {
       URL.revokeObjectURL(url)
       message.success('草稿已开始下载')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '下载草稿失败')
+      message.error(error instanceof Error ? error.message : '下载 Word 草稿失败')
     }
   }
 
@@ -653,7 +653,7 @@ export function AdminOrderDetailPage() {
             <div className="workflow-step-index">3</div>
             <div>
               <strong>生成委托书</strong>
-              <span>三项材料审核通过后，直接生成吉尔吉斯公司注册委托书内部草稿。</span>
+              <span>三项材料审核通过后，直接生成吉尔吉斯公司注册委托书 Word 草稿。</span>
             </div>
             <div className="workflow-step-action">
               <Button disabled className={documentsGenerated ? 'workflow-state-button is-done' : 'workflow-state-button'}>
@@ -790,7 +790,7 @@ export function AdminOrderDetailPage() {
                   key={generatedDocument.file_id}
                   onClick={() => void downloadGeneratedDocument(generatedDocument)}
                 >
-                  下载草稿
+                  下载 Word 草稿
                 </Button>
               ))}
             </Space>

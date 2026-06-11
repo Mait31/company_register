@@ -1,10 +1,12 @@
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from io import BytesIO
 from pathlib import Path
 import re
 from uuid import uuid4
+from zipfile import ZIP_DEFLATED, ZipFile
+from xml.sax.saxutils import escape as xml_escape
 
-from jinja2 import Template
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -24,7 +26,12 @@ from app.services.power_attorney_config import KG_POWER_ATTORNEY_CONFIG
 KG_POWER_OF_ATTORNEY_TEMPLATE_ID = "kg_power_attorney_ru_v1"
 KG_POWER_OF_ATTORNEY_DOCUMENT_TYPE = "kg_power_attorney_draft"
 KG_POWER_OF_ATTORNEY_DOCUMENT_NAME = "吉尔吉斯公司注册委托书（内部草稿）"
+KG_POWER_OF_ATTORNEY_DOCX_TEMPLATE_PATH = (
+    Path(__file__).resolve().parents[1] / "templates" / "KG_POWER_OF_ATTORNEY_TEMPLATE_RU.docx"
+)
+DOCX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 FIELD_KEY_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
+DOCX_PLACEHOLDER_PATTERN = re.compile(r"\{\{\s*([a-z][a-z0-9_]*)\s*\}\}")
 
 
 class DocumentGenerationError(ValueError):
@@ -32,95 +39,9 @@ class DocumentGenerationError(ValueError):
 
 
 @dataclass(frozen=True)
-class RenderedDocument:
-    content: str
+class RenderedDocxDocument:
+    content: bytes
     missing_fields: list[str]
-
-
-KG_POWER_OF_ATTORNEY_TEMPLATE = """# ДОВЕРЕННОСТЬ
-
-> INTERNAL DRAFT / ВНУТРЕННИЙ ЧЕРНОВИК
->
-> 本文件由系统根据客户资料自动填充，仅用于内部核对和提交公证员前的草稿预览。
-> 公证登记号、费用、二维码、签章、电子签名和正式认证段落必须由公证员/公证系统生成。
-
-{{ notary_place_line }}
-
-{{ notary_date_text }}
-
-Я, гражданин {{ principal_country_genitive }} {{ principal_full_name_ru }},
-{{ principal_birth_date_text }} года рождения, паспорт {{ principal_passport_country_code }}
-{{ principal_passport_number }}, выдан {{ principal_passport_issued_by }}
-от {{ principal_passport_issue_date }}, временно зарегистрированный по адресу:
-{{ principal_registration_address }}, ПИН {{ principal_pin }},
-{{ principal_extra_identity_line }},
-
-настоящей доверенностью уполномочиваю гражданина Кыргызской Республики
-{{ agent_full_name_ru }}, {{ agent_birth_date_text }} года рождения,
-ПИН {{ agent_pin }}, идентификационная карта ID {{ agent_id_card_number }},
-выдана {{ agent_id_card_issued_by }} от {{ agent_id_card_issue_date }},
-зарегистрированный по адресу: {{ agent_registration_address }},
-
-представлять меня и мои интересы в органах Министерства юстиции Кыргызской
-Республики, в органах Государственной налоговой службы, Социального фонда,
-ЦОН, органах статистики, государственных и негосударственных органах и
-организациях Кыргызской Республики, а также в государственных онлайн-системах
-и информационных системах Кыргызской Республики, включая Tunduk, систему
-электронного взаимодействия и личные кабинеты, при государственной регистрации
-Общества с ограниченной ответственностью {{ company_name_clause }}.
-
-Для чего предоставляю ему право производить оплату необходимых платежей,
-подавать документы и заявления, подавать электронные онлайн-заявления на
-регистрацию Общества, заполнять и подписывать за меня электронные и бумажные
-документы, в том числе электронно-цифровой подписью, получать РУТОКЕН,
-электронную подпись ЭЦП, ПИН код, ПИН на иностранного гражданина, доступ в
-личный кабинет, расписываться за меня, получать необходимые документы, а также
-справки о неимении задолженности и другие необходимые документы, совершать все
-иные действия и формальности, связанные с исполнением данного поручения.
-
-Полномочия по этой доверенности не могут быть переданы другим лицам.
-
-Срок действия настоящей доверенности - {{ validity_period_text }}.
-
-Содержание статьи 206 Гражданского кодекса Кыргызской Республики мне
-разъяснено.
-
-Текст настоящего документа с русского языка на китайский язык устно переведен
-переводчиком {{ translator_full_name_ru }}, {{ translator_birth_date_text }} года
-рождения, ПИН {{ translator_pin }}, идентификационная карта ID
-{{ translator_id_card_number }}, выдана {{ translator_id_card_issued_by }} от
-{{ translator_id_card_issue_date }}, Сертификат об окончании
-{{ translator_education_institution }} от {{ translator_certificate_date }} года.
-Переводчик предупрежден об ответственности за достоверность перевода и
-нарушение тайны совершенного нотариального действия.
-
-{{ agent_full_name_short }} (подпись) ____________________
-
-Подпись {{ principal_signature_name }} ____________________
-
-## Нотариальное удостоверение
-
-{{ notary_certification_note }}
-
-Зарегистрировано в реестре N {{ notary_registry_number }}
-
-Взыскано государственной пошлины {{ state_duty_amount }} сом
-
-Услуги правового и технического характера {{ notary_service_fee_amount }} сом
-
-Нотариус ____________________
-
-## 系统核对
-
-缺失字段：
-{% if missing_fields %}
-{% for field in missing_fields %}
-- {{ field }}
-{% endfor %}
-{% else %}
-- 无
-{% endif %}
-"""
 
 
 def first_present(*values: object) -> str | None:
@@ -277,12 +198,48 @@ def build_template_context(
         "notary_registry_number": certification_config["registry_number"],
         "state_duty_amount": certification_config["state_duty_amount"],
         "notary_service_fee_amount": certification_config["notary_service_fee_amount"],
+        "notary_certification_date_text": certification_config["date_text"],
+        "notary_full_name_ru": certification_config["notary_full_name_ru"],
+        "notary_district": certification_config["district"],
+        "notary_license_number": certification_config["license_number"],
+        "notary_license_date": certification_config["license_date"],
+        "notary_license_issuer": certification_config["license_issuer"],
         "missing_fields": missing_fields,
     }
     return context, missing_fields
 
 
-def render_kg_power_attorney_draft(db: Session, order: RegistrationOrder) -> RenderedDocument:
+def render_docx_template(context: dict[str, str]) -> bytes:
+    if not KG_POWER_OF_ATTORNEY_DOCX_TEMPLATE_PATH.exists():
+        raise DocumentGenerationError("委托书 Word 模板不存在")
+
+    replacements = {
+        f"{{{{{key}}}}}": xml_escape(str(value))
+        for key, value in context.items()
+        if key != "missing_fields"
+    }
+
+    source = KG_POWER_OF_ATTORNEY_DOCX_TEMPLATE_PATH
+    output = BytesIO()
+    with ZipFile(source, "r") as zin, ZipFile(output, "w", ZIP_DEFLATED) as zout:
+        for item in zin.infolist():
+            data = zin.read(item.filename)
+            if item.filename.startswith("word/") and item.filename.endswith(".xml"):
+                text = data.decode("utf-8")
+                for placeholder, value in replacements.items():
+                    text = text.replace(placeholder, value)
+
+                def replace_unknown(match: re.Match[str]) -> str:
+                    field_key = match.group(1)
+                    return xml_escape(f"[[待补：{field_key}]]")
+
+                text = DOCX_PLACEHOLDER_PATTERN.sub(replace_unknown, text)
+                data = text.encode("utf-8")
+            zout.writestr(item, data)
+    return output.getvalue()
+
+
+def render_order_power_attorney_docx(db: Session, order: RegistrationOrder) -> RenderedDocxDocument:
     customer = db.get(Customer, order.customer_id) if order.customer_id else None
     company = db.query(CompanyDraft).filter(CompanyDraft.order_id == order.id).first()
     person = (
@@ -301,8 +258,7 @@ def render_kg_power_attorney_draft(db: Session, order: RegistrationOrder) -> Ren
     invitation_fields = participant.submitted_fields_json if participant and participant.submitted_fields_json else {}
 
     context, missing_fields = build_template_context(order, customer, company, person, invitation_fields)
-    content = Template(KG_POWER_OF_ATTORNEY_TEMPLATE).render(**context)
-    return RenderedDocument(content=content, missing_fields=missing_fields)
+    return RenderedDocxDocument(content=render_docx_template(context), missing_fields=missing_fields)
 
 
 def assert_invitation_materials_approved(db: Session, invitation: RegistrationInvitation) -> None:
@@ -321,7 +277,7 @@ def assert_invitation_materials_approved(db: Session, invitation: RegistrationIn
             raise DocumentGenerationError(f"{item['material_name']}尚未审核通过")
 
 
-def render_invitation_power_attorney_draft(db: Session, invitation: RegistrationInvitation) -> RenderedDocument:
+def render_invitation_power_attorney_docx(db: Session, invitation: RegistrationInvitation) -> RenderedDocxDocument:
     participant = latest_participant(db, invitation.id)
     invitation_fields = participant.submitted_fields_json if participant and participant.submitted_fields_json else {}
     context, missing_fields = build_template_context(
@@ -331,28 +287,27 @@ def render_invitation_power_attorney_draft(db: Session, invitation: Registration
         person=None,
         invitation_fields=invitation_fields,
     )
-    content = Template(KG_POWER_OF_ATTORNEY_TEMPLATE).render(**context)
-    return RenderedDocument(content=content, missing_fields=missing_fields)
+    return RenderedDocxDocument(content=render_docx_template(context), missing_fields=missing_fields)
 
 
-def save_invitation_generated_text_document(
+def save_invitation_generated_docx_document(
     db: Session,
     invitation: RegistrationInvitation,
     current_user: User,
-    rendered: RenderedDocument,
+    rendered: RenderedDocxDocument,
 ) -> StoredFile:
     target_dir = Path(settings.storage_root) / "generated_documents" / "invitations" / str(invitation.id)
     target_dir.mkdir(parents=True, exist_ok=True)
-    target_path = target_dir / f"{KG_POWER_OF_ATTORNEY_TEMPLATE_ID}_{uuid4().hex}.md"
-    target_path.write_text(rendered.content, encoding="utf-8")
+    target_path = target_dir / f"{KG_POWER_OF_ATTORNEY_TEMPLATE_ID}_{uuid4().hex}.docx"
+    target_path.write_bytes(rendered.content)
 
     stored_file = StoredFile(
         order_id=invitation.order_id,
         owner_type="invitation_generated_document",
         owner_id=invitation.id,
-        file_name=f"{KG_POWER_OF_ATTORNEY_DOCUMENT_NAME}.md",
-        file_ext="md",
-        mime_type="text/markdown",
+        file_name=f"{KG_POWER_OF_ATTORNEY_DOCUMENT_NAME}.docx",
+        file_ext="docx",
+        mime_type=DOCX_MIME_TYPE,
         file_size=target_path.stat().st_size,
         storage_path=str(target_path),
         uploaded_by=current_user.id,
@@ -369,29 +324,29 @@ def generate_invitation_documents(
     current_user: User,
 ) -> tuple[list[StoredFile], list[str]]:
     assert_invitation_materials_approved(db, invitation)
-    rendered = render_invitation_power_attorney_draft(db, invitation)
-    stored_file = save_invitation_generated_text_document(db, invitation, current_user, rendered)
+    rendered = render_invitation_power_attorney_docx(db, invitation)
+    stored_file = save_invitation_generated_docx_document(db, invitation, current_user, rendered)
     return [stored_file], rendered.missing_fields
 
 
-def save_generated_text_document(
+def save_generated_docx_document(
     db: Session,
     order: RegistrationOrder,
     current_user: User,
-    rendered: RenderedDocument,
+    rendered: RenderedDocxDocument,
 ) -> GeneratedDocument:
     target_dir = Path(settings.storage_root) / "generated_documents" / str(order.id)
     target_dir.mkdir(parents=True, exist_ok=True)
-    target_path = target_dir / f"{KG_POWER_OF_ATTORNEY_TEMPLATE_ID}_{uuid4().hex}.md"
-    target_path.write_text(rendered.content, encoding="utf-8")
+    target_path = target_dir / f"{KG_POWER_OF_ATTORNEY_TEMPLATE_ID}_{uuid4().hex}.docx"
+    target_path.write_bytes(rendered.content)
 
     stored_file = StoredFile(
         order_id=order.id,
         owner_type="generated_document",
         owner_id=None,
-        file_name=f"{KG_POWER_OF_ATTORNEY_DOCUMENT_NAME}.md",
-        file_ext="md",
-        mime_type="text/markdown",
+        file_name=f"{KG_POWER_OF_ATTORNEY_DOCUMENT_NAME}.docx",
+        file_ext="docx",
+        mime_type=DOCX_MIME_TYPE,
         file_size=target_path.stat().st_size,
         storage_path=str(target_path),
         uploaded_by=current_user.id,
@@ -419,8 +374,8 @@ def generate_order_documents(
     order: RegistrationOrder,
     current_user: User,
 ) -> tuple[list[GeneratedDocument], list[str]]:
-    rendered = render_kg_power_attorney_draft(db, order)
-    document = save_generated_text_document(db, order, current_user, rendered)
+    rendered = render_order_power_attorney_docx(db, order)
+    document = save_generated_docx_document(db, order, current_user, rendered)
     db.commit()
     db.refresh(document)
     return [document], rendered.missing_fields

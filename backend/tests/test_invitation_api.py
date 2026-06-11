@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+from zipfile import ZipFile
 
 from app.api.deps import get_current_user
 from app.core.config import settings
@@ -378,20 +379,22 @@ def test_generate_documents_autofills_kg_power_attorney_draft(tmp_path) -> None:
         assert document["download_url"] == f"/api/admin/invitations/{invitation['id']}/generated-documents/{document['file_id']}"
         assert body["missing_fields"] == []
 
-        generated_files = list(tmp_path.glob(f"generated_documents/invitations/{invitation['id']}/*.md"))
+        generated_files = list(tmp_path.glob(f"generated_documents/invitations/{invitation['id']}/*.docx"))
         assert len(generated_files) == 1
-        content = generated_files[0].read_text(encoding="utf-8")
-        assert "INTERNAL DRAFT" in content
+        with ZipFile(generated_files[0]) as docx:
+            content = docx.read("word/document.xml").decode("utf-8")
+        assert "{{" not in content
         assert "SUN BA" in content
         assert "Test KG Company LLC" in content
         assert "Улужбек уулу Уланбек" in content
         assert "Кадырбаев Ильиз Кадырбаевич" in content
         assert "ул. Колбаева" in content
-        assert "公证员系统生成" in content
+        assert "由公证员系统生成" in content
 
         downloaded = client.get(document["download_url"])
         assert downloaded.status_code == 200
-        assert "SUN BA" in downloaded.text
+        assert downloaded.headers["content-type"] == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        assert downloaded.content.startswith(b"PK")
     finally:
         settings.storage_root = original_storage_root
         app.dependency_overrides.clear()
