@@ -167,6 +167,16 @@ def build_template_context(
         "translator_full_name_ru",
         translator_config["full_name_ru"],
     )
+    translator_full_name_instrumental = field(
+        "翻译人员俄文姓名造格",
+        "translator_full_name_instrumental",
+        translator_config["full_name_instrumental"],
+    )
+    translator_full_name_genitive = field(
+        "翻译人员俄文姓名属格",
+        "translator_full_name_genitive",
+        translator_config["full_name_genitive"],
+    )
 
     context = {
         "notary_place_line": field("公证地点", notary_place_line),
@@ -212,7 +222,11 @@ def build_template_context(
         "translator_id_card_issued_by": field("翻译人员身份证签发机关", "translator_id_card_issued_by", translator_config["id_card_issued_by"]),
         "translator_id_card_issue_date": field("翻译人员身份证签发日期", "translator_id_card_issue_date", translator_config["id_card_issue_date"]),
         "translator_education_institution": field("翻译人员证书/学历机构", "translator_education_institution", translator_config["education_institution"]),
+        "translator_certificate_issuer": field("翻译人员证书签发机构", "translator_certificate_issuer", translator_config["certificate_issuer"]),
+        "translator_certificate_number": field("翻译人员证书编号", "translator_certificate_number", translator_config["certificate_number"]),
         "translator_certificate_date": field("翻译人员证书日期", "translator_certificate_date", translator_config["certificate_date"]),
+        "translator_full_name_instrumental": translator_full_name_instrumental,
+        "translator_full_name_genitive": translator_full_name_genitive,
         "agent_full_name_short": short_name(agent_full_name),
         "principal_signature_name": principal_name,
         "notary_certification_note": certification_config["note"],

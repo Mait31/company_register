@@ -534,7 +534,13 @@ def test_generate_documents_autofills_kg_power_attorney_draft(tmp_path) -> None:
         assert "г. Бишкек" in content
         assert "Test KG Company LLC" in content
         assert "Улужбек уулу Уланбек" in content
-        assert "Кадырбаев Ильиз Кадырбаевич" in content
+        assert "Кадырбаевым Илизом Кадырбаевичем" in content
+        assert "Кадырбаева Ильиза Кадырбаевича" in content
+        assert "Синьского университета Китайской Народной Республики" in content
+        assert "№ 2017019" in content
+        assert "Жаманкуловым Алнуром Токтомушатовичем" in content
+        assert "нотариального округа города Бишкек Кыргызской Республики" in content
+        assert "лицензии № 622, выданной МЮ КР от 11.04.2013 года" in content
         assert "ул. Колбаева" in content
         assert "由公证员系统生成" in content
         assert "<w:br/>" in content
