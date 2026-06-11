@@ -85,6 +85,7 @@ type FollowFormValues = {
   status: string
   remark?: string
   full_company_name?: string
+  company_name_ru?: string
   legal_address?: string
   shareholder_note?: string
   registered_capital?: string
@@ -98,6 +99,17 @@ type FollowFormValues = {
   visa_type?: string
   name?: string
   mobile?: string
+  notary_date_text?: string
+  principal_country_genitive?: string
+  principal_full_name_ru?: string
+  principal_birth_date_text?: string
+  principal_passport_country_code?: string
+  principal_passport_number?: string
+  principal_passport_issued_by?: string
+  principal_passport_issue_date?: string
+  principal_registration_address?: string
+  principal_pin?: string
+  principal_extra_identity_line?: string
 }
 
 const statusText: Record<string, string> = {
@@ -137,6 +149,7 @@ const fieldGroups = [
     title: '公司信息',
     fields: [
       ['full_company_name', '公司名称'],
+      ['company_name_ru', '公司俄文名称'],
       ['legal_address', '法律地址'],
       ['registered_capital', '注册资金'],
       ['business_scope', '主要经营范围'],
@@ -158,6 +171,22 @@ const fieldGroups = [
       ['need_bank_account', '是否需要银行开户'],
       ['need_accounting', '是否需要代理记账'],
       ['visa_type', '签证'],
+    ],
+  },
+  {
+    title: '委托书自动填充',
+    fields: [
+      ['notary_date_text', '公证日期'],
+      ['principal_country_genitive', '委托人国籍俄文属格'],
+      ['principal_full_name_ru', '委托人俄文姓名'],
+      ['principal_birth_date_text', '委托人出生日期文字'],
+      ['principal_passport_country_code', '护照国家代码'],
+      ['principal_passport_number', '护照号'],
+      ['principal_passport_issued_by', '护照签发机关'],
+      ['principal_passport_issue_date', '护照签发日期'],
+      ['principal_registration_address', '吉尔吉斯临时登记地址'],
+      ['principal_pin', '委托人 PIN'],
+      ['principal_extra_identity_line', '身份补充说明'],
     ],
   },
   {
@@ -210,6 +239,7 @@ function toFormValues(detail: InvitationDetail): FollowFormValues {
     status: detail.status === 'completed' ? 'completed' : 'pending_internal_confirm',
     remark: detail.remark || undefined,
     full_company_name: String(fields.full_company_name || ''),
+    company_name_ru: String(fields.company_name_ru || ''),
     legal_address: String(fields.legal_address || ''),
     shareholder_note: String(fields.shareholder_note || ''),
     registered_capital: String(fields.registered_capital || ''),
@@ -223,6 +253,17 @@ function toFormValues(detail: InvitationDetail): FollowFormValues {
     visa_type: String(fields.visa_type || ''),
     name: String(fields.name || detail.contact_name || ''),
     mobile: String(fields.mobile || detail.contact_mobile || ''),
+    notary_date_text: String(fields.notary_date_text || ''),
+    principal_country_genitive: String(fields.principal_country_genitive || ''),
+    principal_full_name_ru: String(fields.principal_full_name_ru || ''),
+    principal_birth_date_text: String(fields.principal_birth_date_text || ''),
+    principal_passport_country_code: String(fields.principal_passport_country_code || ''),
+    principal_passport_number: String(fields.principal_passport_number || ''),
+    principal_passport_issued_by: String(fields.principal_passport_issued_by || ''),
+    principal_passport_issue_date: String(fields.principal_passport_issue_date || ''),
+    principal_registration_address: String(fields.principal_registration_address || ''),
+    principal_pin: String(fields.principal_pin || ''),
+    principal_extra_identity_line: String(fields.principal_extra_identity_line || ''),
   }
 }
 
@@ -231,6 +272,7 @@ function toSubmittedFields(values: FollowFormValues) {
     name: values.name || undefined,
     mobile: values.mobile || undefined,
     full_company_name: values.full_company_name || undefined,
+    company_name_ru: values.company_name_ru || undefined,
     legal_address: values.legal_address || undefined,
     shareholder_note: values.shareholder_note || undefined,
     registered_capital: values.registered_capital || undefined,
@@ -242,6 +284,17 @@ function toSubmittedFields(values: FollowFormValues) {
     need_bank_account: textToBool(values.need_bank_account),
     need_accounting: textToBool(values.need_accounting),
     visa_type: values.visa_type || undefined,
+    notary_date_text: values.notary_date_text || undefined,
+    principal_country_genitive: values.principal_country_genitive || undefined,
+    principal_full_name_ru: values.principal_full_name_ru || undefined,
+    principal_birth_date_text: values.principal_birth_date_text || undefined,
+    principal_passport_country_code: values.principal_passport_country_code || undefined,
+    principal_passport_number: values.principal_passport_number || undefined,
+    principal_passport_issued_by: values.principal_passport_issued_by || undefined,
+    principal_passport_issue_date: values.principal_passport_issue_date || undefined,
+    principal_registration_address: values.principal_registration_address || undefined,
+    principal_pin: values.principal_pin || undefined,
+    principal_extra_identity_line: values.principal_extra_identity_line || undefined,
   }
 }
 
@@ -712,7 +765,7 @@ export function AdminOrderDetailPage() {
                   loading={generatingDocuments}
                   onClick={() => void generateDocuments()}
                 >
-                  生成委托书
+                  {documentsGenerated ? '重新生成委托书' : '生成委托书'}
                 </Button>
               </>
             ) : (
@@ -950,6 +1003,9 @@ export function AdminOrderEditPage() {
             <Form.Item label="公司名称" name="full_company_name">
               <Input />
             </Form.Item>
+            <Form.Item label="公司俄文名称" name="company_name_ru">
+              <Input placeholder="例如 Test KG Company LLC 或俄文公司名" />
+            </Form.Item>
             <Form.Item label="法律地址" name="legal_address">
               <Input.TextArea rows={2} />
             </Form.Item>
@@ -982,6 +1038,39 @@ export function AdminOrderEditPage() {
             </Form.Item>
             <Form.Item label="签证" name="visa_type">
               <Input />
+            </Form.Item>
+            <Form.Item label="公证日期" name="notary_date_text">
+              <Input placeholder="例如 10 июня 2026" />
+            </Form.Item>
+            <Form.Item label="委托人国籍俄文属格" name="principal_country_genitive">
+              <Input placeholder="例如 Китайской Народной Республики" />
+            </Form.Item>
+            <Form.Item label="委托人俄文姓名" name="principal_full_name_ru">
+              <Input placeholder="例如 ZHANG QING" />
+            </Form.Item>
+            <Form.Item label="委托人出生日期文字" name="principal_birth_date_text">
+              <Input placeholder="例如 16 июля 1984" />
+            </Form.Item>
+            <Form.Item label="护照国家代码" name="principal_passport_country_code">
+              <Input placeholder="例如 CHN" />
+            </Form.Item>
+            <Form.Item label="护照号" name="principal_passport_number">
+              <Input placeholder="例如 EJ1917775" />
+            </Form.Item>
+            <Form.Item label="护照签发机关" name="principal_passport_issued_by">
+              <Input placeholder="例如 National Immigration Administration, PRC" />
+            </Form.Item>
+            <Form.Item label="护照签发日期" name="principal_passport_issue_date">
+              <Input placeholder="例如 14 января 2020" />
+            </Form.Item>
+            <Form.Item label="吉尔吉斯临时登记地址" name="principal_registration_address" className="wide-form-item">
+              <Input.TextArea rows={2} />
+            </Form.Item>
+            <Form.Item label="委托人 PIN" name="principal_pin">
+              <Input />
+            </Form.Item>
+            <Form.Item label="身份补充说明" name="principal_extra_identity_line" className="wide-form-item">
+              <Input.TextArea rows={2} placeholder="可保留默认：имеющий регистрацию иностранного гражданина" />
             </Form.Item>
             <Form.Item label="内部备注" name="remark" className="wide-form-item">
               <Input.TextArea rows={3} placeholder="记录资料修正点、缺失项或归档说明" />

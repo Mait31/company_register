@@ -101,8 +101,6 @@ def build_template_context(
         "applicant_name_ru",
         "director_name_ru",
         person.name_en if person else None,
-        "name",
-        customer.name if customer else None,
     )
     principal_country = country_genitive(
         first_present(
@@ -115,14 +113,11 @@ def build_template_context(
 
     company_name = first_present(
         invitation_fields.get("company_name_ru"),
-        invitation_fields.get("full_company_name"),
-        invitation_fields.get("company_name_1"),
-        company.company_name_1 if company else None,
     )
     if company_name:
         company_name_clause = f'с фирменным наименованием "{company_name}"'
     else:
-        company_name_clause = "с фирменным наименованием на усмотрение поверенного"
+        company_name_clause = pending("公司俄文名称", missing_fields)
 
     notary_config = KG_POWER_ATTORNEY_CONFIG["notary"]
     agent_config = KG_POWER_ATTORNEY_CONFIG["agent"]

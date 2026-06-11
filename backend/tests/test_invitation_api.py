@@ -212,6 +212,75 @@ def test_invitation_material_upload_review_and_public_summary(tmp_path) -> None:
         app.dependency_overrides.clear()
 
 
+def test_generate_documents_does_not_use_chinese_fields_for_russian_draft(tmp_path) -> None:
+    client = make_client()
+    original_storage_root = settings.storage_root
+    settings.storage_root = str(tmp_path)
+    try:
+        created = client.post("/api/admin/invitations", json={"remark": "中文资料不兜底俄文委托书"})
+        assert created.status_code == 200
+        invitation = created.json()
+        token = invitation["token"]
+
+        submitted = client.post(
+            f"/api/invitations/{token}/participants",
+            json={
+                "role": "customer",
+                "name": "张青",
+                "mobile": "13400000000",
+                "full_company_name": "wlch公司",
+            },
+        )
+        assert submitted.status_code == 200
+
+        updated = client.patch(
+            f"/api/admin/invitations/{invitation['id']}",
+            json={
+                "status": "completed",
+                "submitted_fields_json": {
+                    "name": "张青",
+                    "mobile": "13400000000",
+                    "full_company_name": "wlch公司",
+                    "notary_date_text": "10 июня 2026",
+                },
+            },
+        )
+        assert updated.status_code == 200
+
+        started = client.post(f"/api/admin/invitations/{invitation['id']}/materials/start")
+        assert started.status_code == 200
+
+        for material_type in ("passport_translation", "pin_code", "landing_signature"):
+            uploaded = client.post(
+                f"/api/invitations/{token}/materials/{material_type}/files",
+                files={"upload": (f"{material_type}.pdf", b"fake pdf", "application/pdf")},
+            )
+            assert uploaded.status_code == 200
+            reviewed = client.post(
+                f"/api/admin/invitations/{invitation['id']}/materials/{material_type}/review",
+                json={"status": "approved"},
+            )
+            assert reviewed.status_code == 200
+
+        generated = client.post(f"/api/admin/invitations/{invitation['id']}/generate-documents")
+        assert generated.status_code == 200
+        body = generated.json()
+        assert "委托人俄文姓名" in body["missing_fields"]
+        assert "公司俄文名称" in body["missing_fields"]
+
+        generated_files = list(tmp_path.glob(f"generated_documents/invitations/{invitation['id']}/*.docx"))
+        assert len(generated_files) == 1
+        with ZipFile(generated_files[0]) as docx:
+            content = docx.read("word/document.xml").decode("utf-8")
+        assert "张青" not in content
+        assert "wlch公司" not in content
+        assert "待补：委托人俄文姓名" in content
+        assert "待补：公司俄文名称" in content
+    finally:
+        settings.storage_root = original_storage_root
+        app.dependency_overrides.clear()
+
+
 def test_convert_invitation_to_order_requires_approved_materials(tmp_path) -> None:
     client = make_client()
     original_storage_root = settings.storage_root
