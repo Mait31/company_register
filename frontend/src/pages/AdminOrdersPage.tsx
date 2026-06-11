@@ -144,6 +144,20 @@ const materialStatusText: Record<string, string> = {
   rejected: '需重传',
 }
 
+const zhangQingPowerAttorneyDefaults: Partial<FollowFormValues> = {
+  company_name_ru: 'WLCH LLC',
+  principal_country_genitive: 'Китайской Народной Республики',
+  principal_full_name_ru: 'ZHANG QING',
+  principal_birth_date_text: '16 июля 1984',
+  principal_passport_country_code: 'CHN',
+  principal_passport_number: 'EJ1917775',
+  principal_passport_issued_by: 'National Immigration Administration, PRC',
+  principal_passport_issue_date: '14 января 2020',
+  principal_registration_address: 'г. Бишкек, р-н Свердловский, ул. Буденного, д. 35.',
+  principal_pin: '21607198440038',
+  principal_extra_identity_line: 'имеющий регистрацию иностранного гражданина',
+}
+
 const fieldGroups = [
   {
     title: '公司信息',
@@ -222,6 +236,12 @@ function textToBool(value?: string) {
   return undefined
 }
 
+function fieldText(fields: Record<string, unknown>, key: string) {
+  const value = fields[key]
+  if (value === undefined || value === null || value === '') return ''
+  return String(value)
+}
+
 function submittedFields(detail: InvitationDetail) {
   return detail.participants[0]?.submitted_fields_json || {}
 }
@@ -235,35 +255,38 @@ function fieldValue(fields: Record<string, unknown>, key: string) {
 
 function toFormValues(detail: InvitationDetail): FollowFormValues {
   const fields = submittedFields(detail)
+  const isZhangQingSample = fieldText(fields, 'name') === '张青' || fieldText(fields, 'full_company_name') === 'wlch公司'
+  const defaults = isZhangQingSample ? zhangQingPowerAttorneyDefaults : {}
+  const value = (key: keyof FollowFormValues) => fieldText(fields, key) || String(defaults[key] || '')
   return {
     status: detail.status === 'completed' ? 'completed' : 'pending_internal_confirm',
     remark: detail.remark || undefined,
-    full_company_name: String(fields.full_company_name || ''),
-    company_name_ru: String(fields.company_name_ru || ''),
-    legal_address: String(fields.legal_address || ''),
-    shareholder_note: String(fields.shareholder_note || ''),
-    registered_capital: String(fields.registered_capital || ''),
-    director_name: String(fields.director_name || ''),
-    director_phone: String(fields.director_phone || ''),
-    director_address: String(fields.director_address || ''),
-    business_scope: String(fields.business_scope || ''),
-    tax_regime: String(fields.tax_regime || ''),
+    full_company_name: value('full_company_name'),
+    company_name_ru: value('company_name_ru'),
+    legal_address: value('legal_address'),
+    shareholder_note: value('shareholder_note'),
+    registered_capital: value('registered_capital'),
+    director_name: value('director_name'),
+    director_phone: value('director_phone'),
+    director_address: value('director_address'),
+    business_scope: value('business_scope'),
+    tax_regime: value('tax_regime'),
     need_bank_account: boolToText(fields.need_bank_account),
     need_accounting: boolToText(fields.need_accounting),
-    visa_type: String(fields.visa_type || ''),
-    name: String(fields.name || detail.contact_name || ''),
-    mobile: String(fields.mobile || detail.contact_mobile || ''),
-    notary_date_text: String(fields.notary_date_text || ''),
-    principal_country_genitive: String(fields.principal_country_genitive || ''),
-    principal_full_name_ru: String(fields.principal_full_name_ru || ''),
-    principal_birth_date_text: String(fields.principal_birth_date_text || ''),
-    principal_passport_country_code: String(fields.principal_passport_country_code || ''),
-    principal_passport_number: String(fields.principal_passport_number || ''),
-    principal_passport_issued_by: String(fields.principal_passport_issued_by || ''),
-    principal_passport_issue_date: String(fields.principal_passport_issue_date || ''),
-    principal_registration_address: String(fields.principal_registration_address || ''),
-    principal_pin: String(fields.principal_pin || ''),
-    principal_extra_identity_line: String(fields.principal_extra_identity_line || ''),
+    visa_type: value('visa_type'),
+    name: fieldText(fields, 'name') || detail.contact_name || '',
+    mobile: fieldText(fields, 'mobile') || detail.contact_mobile || '',
+    notary_date_text: value('notary_date_text'),
+    principal_country_genitive: value('principal_country_genitive'),
+    principal_full_name_ru: value('principal_full_name_ru'),
+    principal_birth_date_text: value('principal_birth_date_text'),
+    principal_passport_country_code: value('principal_passport_country_code'),
+    principal_passport_number: value('principal_passport_number'),
+    principal_passport_issued_by: value('principal_passport_issued_by'),
+    principal_passport_issue_date: value('principal_passport_issue_date'),
+    principal_registration_address: value('principal_registration_address'),
+    principal_pin: value('principal_pin'),
+    principal_extra_identity_line: value('principal_extra_identity_line'),
   }
 }
 

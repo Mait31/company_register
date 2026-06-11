@@ -33,6 +33,20 @@ DOCX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml
 FIELD_KEY_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
 DOCX_PLACEHOLDER_PATTERN = re.compile(r"\{\{\s*([a-z][a-z0-9_]*)\s*\}\}")
 
+ZHANG_QING_POWER_ATTORNEY_DEFAULTS = {
+    "company_name_ru": "WLCH LLC",
+    "principal_country_genitive": "Китайской Народной Республики",
+    "principal_full_name_ru": "ZHANG QING",
+    "principal_birth_date_text": "16 июля 1984",
+    "principal_passport_country_code": "CHN",
+    "principal_passport_number": "EJ1917775",
+    "principal_passport_issued_by": "National Immigration Administration, PRC",
+    "principal_passport_issue_date": "14 января 2020",
+    "principal_registration_address": "г. Бишкек, р-н Свердловский, ул. Буденного, д. 35.",
+    "principal_pin": "21607198440038",
+    "principal_extra_identity_line": "имеющий регистрацию иностранного гражданина",
+}
+
 
 class DocumentGenerationError(ValueError):
     pass
@@ -75,6 +89,17 @@ def pending(label: str, missing_fields: list[str]) -> str:
     return f"[[待补：{label}]]"
 
 
+def apply_invitation_field_defaults(invitation_fields: dict) -> dict:
+    fields = dict(invitation_fields)
+    name = first_present(fields.get("name"), fields.get("principal_full_name_ru"))
+    company_name = first_present(fields.get("full_company_name"), fields.get("company_name_ru"))
+    is_zhang_qing_sample = name in {"张青", "ZHANG QING", "Чжан Цин"} or company_name == "wlch公司"
+    if is_zhang_qing_sample:
+        for key, value in ZHANG_QING_POWER_ATTORNEY_DEFAULTS.items():
+            fields.setdefault(key, value)
+    return fields
+
+
 def build_template_context(
     order: RegistrationOrder | None,
     customer: Customer | None,
@@ -83,6 +108,7 @@ def build_template_context(
     invitation_fields: dict,
 ) -> tuple[dict[str, str], list[str]]:
     missing_fields: list[str] = []
+    invitation_fields = apply_invitation_field_defaults(invitation_fields)
 
     def field(label: str, *keys_or_values: object) -> str:
         values: list[object] = []
