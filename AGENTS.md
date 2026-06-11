@@ -133,13 +133,26 @@ git diff --check -- README.md docs/DEVELOPMENT_RULES.md memory.md AGENTS.md
 
 如果需要服务器操作，必须列出：
 
-- 是否需要拉取最新代码。
+- 是否需要更新服务器代码；如果推荐使用 `sh deploy/scripts/deploy.sh`，不要再把 `git pull origin main` 单独列为必跑命令。
 - 是否需要执行部署脚本，例如 `sh deploy/scripts/deploy.sh`。
 - 是否需要数据库迁移，例如 `alembic upgrade head` 或容器内等价命令。
 - 是否需要新增或修改 `.env` / Nginx / Docker Compose 配置。
 - 是否需要重启服务、重建镜像或清理缓存。
 - 推荐的生产验证命令或 URL。
 - 有风险时说明回滚方式或注意事项。
+
+部署脚本规则：
+
+- 本项目 `deploy/scripts/deploy.sh` 已包含 `git pull --ff-only` 和 `docker compose up -d --build`。
+- 正常服务器更新只输出：
+
+```bash
+cd /你的/company_register/项目目录
+sh deploy/scripts/deploy.sh
+```
+
+- 只有在不使用部署脚本、需要手动更新代码时，才单独输出 `git pull origin main`。
+- 不要同时把 `git pull origin main` 和 `sh deploy/scripts/deploy.sh` 写成连续必跑步骤，避免重复和误解。
 
 如果不需要服务器操作，也要明确写出：`服务器无需额外操作`。
 
