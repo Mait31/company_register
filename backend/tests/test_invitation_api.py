@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from zipfile import ZipFile
+from xml.etree import ElementTree as ET
 
 from app.api.deps import get_current_user
 from app.core.config import settings
@@ -10,6 +11,14 @@ from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
 from app.models.user import User
+from app.services.document_generation import KG_POWER_OF_ATTORNEY_DOCX_TEMPLATE_PATH
+
+
+WORD_NS = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+
+
+def word_attr(element: ET.Element, name: str) -> str | None:
+    return element.get(f"{{{WORD_NS['w']}}}{name}")
 
 
 def make_client() -> TestClient:
@@ -63,6 +72,56 @@ def full_power_attorney_fields() -> dict:
         "nationality": "中国",
         "notary_date_text": "10 июня 2026",
     }
+
+
+def test_kg_power_attorney_template_uses_compact_layout() -> None:
+    with ZipFile(KG_POWER_OF_ATTORNEY_DOCX_TEMPLATE_PATH) as docx:
+        document_xml = ET.fromstring(docx.read("word/document.xml"))
+        styles_xml = ET.fromstring(docx.read("word/styles.xml"))
+
+    page_margins = document_xml.find(".//w:sectPr/w:pgMar", WORD_NS)
+    assert page_margins is not None
+    assert int(word_attr(page_margins, "top") or 0) <= 454
+    assert int(word_attr(page_margins, "bottom") or 0) <= 454
+    assert int(word_attr(page_margins, "left") or 0) <= 709
+    assert int(word_attr(page_margins, "right") or 0) <= 709
+
+    normal_style = None
+    for style in styles_xml.findall("w:style", WORD_NS):
+        name = style.find("w:name", WORD_NS)
+        if name is not None and word_attr(name, "val") == "Normal":
+            normal_style = style
+            break
+    assert normal_style is not None
+
+    normal_size = normal_style.find("w:rPr/w:sz", WORD_NS)
+    normal_spacing = normal_style.find("w:pPr/w:spacing", WORD_NS)
+    assert normal_size is not None
+    assert word_attr(normal_size, "val") == "17"
+    assert normal_spacing is not None
+    assert word_attr(normal_spacing, "after") == "0"
+    assert word_attr(normal_spacing, "line") == "190"
+    assert word_attr(normal_spacing, "lineRule") == "exact"
+
+    paragraphs = document_xml.find("w:body", WORD_NS).findall("w:p", WORD_NS)
+    for index in (4, 5, 6, 7, 8, 9, 10, 11, 15, 16):
+        paragraph = paragraphs[index]
+        spacing = paragraph.find("w:pPr/w:spacing", WORD_NS)
+        alignment = paragraph.find("w:pPr/w:jc", WORD_NS)
+        indent = paragraph.find("w:pPr/w:ind", WORD_NS)
+        sizes = {
+            word_attr(size, "val")
+            for size in paragraph.findall(".//w:rPr/w:sz", WORD_NS)
+        }
+        assert spacing is not None
+        assert word_attr(spacing, "after") == "0"
+        assert word_attr(spacing, "line") == "190"
+        assert word_attr(spacing, "lineRule") == "exact"
+        assert alignment is not None
+        assert word_attr(alignment, "val") == "both"
+        assert indent is not None
+        assert word_attr(indent, "firstLine") == "360"
+        assert sizes == {"17"}
 
 
 def test_invitation_entry_saves_participant_fields() -> None:
