@@ -1,0 +1,46 @@
+﻿
+# BEGIN CODEX PERFORMANCE IGNORE
+# Keep local dependency, build, cache, and runtime data out of Codex/file search.
+node_modules/
+**/node_modules/
+.venv/
+**/.venv/
+venv/
+**/venv/
+dist/
+**/dist/
+build/
+**/build/
+.next/
+**/.next/
+.nuxt/
+**/.nuxt/
+.svelte-kit/
+**/.svelte-kit/
+coverage/
+**/coverage/
+__pycache__/
+**/__pycache__/
+.pytest_cache/
+**/.pytest_cache/
+.ruff_cache/
+**/.ruff_cache/
+.mypy_cache/
+**/.mypy_cache/
+*.egg-info/
+**/*.egg-info/
+*.tsbuildinfo
+*.log
+*.sqlite
+*.sqlite3
+data/
+**/data/
+storage/
+**/storage/
+backups/
+**/backups/
+outputs/
+**/outputs/
+.env
+.env.*
+# END CODEX PERFORMANCE IGNORE
