@@ -1,14 +1,57 @@
-# Codex 项目记忆
+# company memory
 
-这个文件是 Codex Agent 的长期工作记忆。Notion 用来给人看、做决策和管理任务；GitHub 用来保存代码事实；`memory.md` 用来让 Codex 每次接手时先恢复项目边界、当前状态和协作规则。
+本文件是 `company` 的长期项目记忆，记录当前范围、代码架构、API 和业务链路。Codex 每次处理本项目任务前必须先读本文件。
 
 ## 项目定位
 
-项目路径：`D:\openai\company`
+- 本地路径：`D:\openai\company`
+- GitHub：`git@github.com:Mait31/company_register.git`
+- 当前目标：只做到吉尔吉斯公司注册委托书模板生成。
+- 完成标准：客户资料收集、委托书材料收集、材料审核、基于 Word 模板生成委托书 DOCX 内部草稿跑通后，项目暂停。
 
-项目目标：当前只做到公司注册委托书模板生成。跑通客户资料收集、委托书材料收集、材料审核、基于 Word 模板生成委托书 DOCX 内部草稿后，本项目暂停。
+## 当前不做
 
-当前主链路：
+```text
+报价
+客户在线确认报价
+付费确认
+注册办理
+注册结果上传
+公司最终归档
+完整税务平台
+App / 微信小程序
+微服务 / Kubernetes / 复杂审批流
+政府网站爬虫或全自动 RPA
+多国家复杂规则引擎
+企业微信聊天记录分析
+额外 PDF/DOCX 正式文件扩展
+```
+
+## 代码架构
+
+```text
+frontend/    React + TypeScript + Vite + Ant Design
+backend/     FastAPI + SQLAlchemy + Pydantic + Alembic
+templates/   Word/PDF 业务模板
+storage/     运行时文件挂载目录
+deploy/      Nginx、Docker、部署脚本
+```
+
+前端主要页面：
+
+```text
+/login
+/admin/orders
+/admin/orders/:id
+/admin/orders/:id/edit
+/i/:token
+/invitations/:token
+/i/:token/materials
+```
+
+后端统一挂载 `/api`。
+
+## 当前主流程
 
 ```text
 内部创建邀请
@@ -17,74 +60,144 @@
 -> 内部在 /admin/orders 核对资料并标记资料归档
 -> 内部发起委托书材料收集
 -> 客户上传护照翻译件、PIN 码、落地签
--> 内部审核材料
--> 材料通过后基于 Word 模板生成委托书内部草稿
+-> 内部审核三项材料
+-> 材料通过后基于 Word 模板生成委托书 DOCX 内部草稿
 -> 项目暂停
 ```
 
-## 当前事实
+注意：
 
-- `/admin/orders` 当前前端页面实际是邀请资料台账，不是正式工单列表。
+- `/admin/orders` 当前实际是邀请资料台账，不是正式工单列表。
 - “资料归档”只表示前置客户资料核对完成，不等于公司最终归档。
-- 当前前端主链路不再要求先转正式 `registration_order`；三项委托书材料审核通过后直接基于 Word 模板生成委托书内部草稿。
-- 吉尔吉斯公司注册委托书自动填充目前生成的是 DOCX 内部草稿，不替代公证系统、edoc、en 或 online 平台里的正式文件。
-- 用户已明确：本项目做到委托书模板生成就 OK，整个项目到此先停止；其他计划全部不要，先聚焦。
+- 当前主链路不要求先转正式 `registration_order`。
+- 生成的是我方 DOCX 内部草稿，不替代公证系统、edoc、en 或 online 平台正式文件。
 
-## 第一阶段不做
+## API 地图
 
-- 完整税务申报平台。
-- AI 自动报税。
-- 手机 App 或微信小程序。
-- 微服务、Kubernetes、复杂审批流引擎。
-- 政府网站爬虫或全自动 RPA 提交。
-- 多国家复杂规则引擎。
-- 在线支付网关。
-- 企业微信聊天记录分析。
-- 付费确认或办理启动。
-- 注册办理。
-- 注册结果上传。
-- 公司最终归档。
-- 额外 PDF/DOCX 正式文件扩展。
+基础：
 
-## Codex 接手规则
+```text
+GET  /api/health
+```
 
-每次开始开发前先读：
+客户邀请和资料收集：
 
-1. `README.md`
-2. `docs/DEVELOPMENT_RULES.md`
-3. `memory.md`
-4. Notion 项目页中当前标记为 `Ready for Codex` 的任务
+```text
+GET   /api/invitations/{token}
+POST  /api/invitations/{token}/participants
+PATCH /api/invitations/{token}/customer
+PATCH /api/invitations/{token}/company
+POST  /api/invitations/{token}/files
+POST  /api/invitations/{token}/bind-wechat
+```
 
-开发时：
+委托书材料收集：
 
-- 只处理一个明确的 P0 任务，避免同时扩散多个方向。
-- 代码事实以仓库为准；产品判断和任务上下文同步到 Notion。
-- 不因为 Notion 里画了图就默认代码已经完成，必须回到仓库核对实现、测试和提交记录。
-- 需求如果超出当前边界，不记录为当前待办，不直接混入项目。
+```text
+GET  /api/invitations/{token}/materials
+POST /api/invitations/{token}/materials/{material_type}/files
+POST /api/invitations/{token}/materials/submit
+GET  /api/public/invitations/{token}/materials
+GET  /api/public/invitations/{token}/materials/{material_type}/file
+```
 
-完成时：
+内部邀请台账和材料审核：
 
-- 根据改动范围运行后端测试、前端检查或构建。
-- 提交和推送统一使用 `scripts\codex-push.ps1`，不要手动串行执行 `git add`、`git commit`、`git push`。
-- 推送后把 commit、验证结果和下一步同步回 Notion。
+```text
+POST  /api/admin/invitations
+GET   /api/admin/invitations
+GET   /api/admin/invitations/{invitation_id}
+PATCH /api/admin/invitations/{invitation_id}
+GET   /api/admin/invitations/{invitation_id}/materials
+POST  /api/admin/invitations/{invitation_id}/materials/start
+POST  /api/admin/invitations/{invitation_id}/materials/{material_type}/review
+POST  /api/admin/invitations/{invitation_id}/generate-documents
+GET   /api/admin/invitations/{invitation_id}/generated-documents/{file_id}
+```
 
-## 当前开发焦点
+历史正式工单底座仍存在，但当前主流程不继续扩展：
 
-P0：只验收邀请资料台账、委托书材料收集、三项材料审核、基于 Word 模板生成委托书 DOCX 内部草稿这条链路。
+```text
+POST /api/admin/orders
+GET  /api/admin/orders
+GET  /api/admin/orders/{order_id}
+POST /api/admin/orders/{order_id}/change-status
+POST /api/admin/orders/{order_id}/generate-documents
+POST /api/admin/orders/{order_id}/archive
+POST /api/admin/invitations/{invitation_id}/convert-to-order
+```
 
-P1：没有当前 P1。委托书模板生成稳定后暂停项目。
+企业微信/公众号占位：
 
-P2：没有当前 P2。其他后续想法不进入当前计划。
+```text
+GET  /api/wecom/oauth/login
+GET  /api/wecom/oauth/callback
+POST /api/wecom/events
+POST /api/wecom/sync-users
+POST /api/wecom/send-message
+GET  /api/wechat/oauth/login
+GET  /api/wechat/oauth/callback
+GET  /api/wechat/js-sdk-signature
+```
 
-## 最近验证记录
+## 数据和文件
+
+核心表/模型：
+
+```text
+registration_invitations
+invitation_participants
+invitation_materials
+files / storage
+workflow_logs
+audit_logs
+generated_documents
+registration_orders    历史正式工单底座，当前不作为主链路继续扩展
+```
+
+委托书材料类型：
+
+```text
+passport_translation
+pin_code
+entry_permit
+```
+
+## 验证记录
 
 - 2026-06-10：后端 `pytest backend\tests` 通过，17 passed。
 - 2026-06-10：后端 `ruff check backend` 通过。
-- 2026-06-10：已推送 commit `e1b7869`，内容包括委托书内部草稿自动生成和项目提交脚本。
+- 2026-06-10：已推送 commit `e1b7869`，包含委托书内部草稿自动生成和项目提交脚本。
+- 2026-06-12：已推送 commit `3d56a83`，将项目范围收敛到委托书模板生成。
+
+## 运行和验证
+
+后端：
+
+```powershell
+cd D:\openai\company
+$env:PYTHONPATH='D:\openai\company\.python_packages;D:\openai\company\backend'
+python -c "import pytest, sys; sys.exit(pytest.main(['backend\\tests']))"
+D:\openai\company\.python_packages\bin\ruff.exe check backend
+```
+
+前端：
+
+```powershell
+cd D:\openai\company\frontend
+npm run lint
+npm run typecheck
+npm run build
+```
+
+提交：
+
+```powershell
+cd D:\openai\company
+.\scripts\codex-push.ps1 -Message "Commit message here" -Paths "AGENTS.md,memory.md"
+```
 
 ## 关键链接
 
 - Notion 项目中枢：`https://app.notion.com/p/37b688a0cb2281cfb088d084c47e6ba4`
-- GitHub 仓库：`git@github.com:Mait31/company_register.git`
-- 主规格：`docs/DEVELOPMENT_RULES.md`
-- GitHub 提交脚本：`scripts\codex-push.ps1`
+- Notion 同步页：`https://app.notion.com/p/37d688a0cb228134bdc9ed950361f1d2`
