@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     wechat_mp_callback_base_url: str = "http://localhost"
     wechat_share_title: str = "公司注册信息登记"
     wechat_share_desc: str = "请按要求补充公司登记所需信息"
-    wechat_share_image_url: str = "https://ling.mseor.com/wechat-share.png"
+    wechat_share_image_url: str = ""
 
 
 @lru_cache

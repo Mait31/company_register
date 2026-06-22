@@ -229,6 +229,10 @@ export function InvitationPage() {
   )
 
   useEffect(() => {
+    document.title = isMaterialRoute ? '委托书材料上传' : '公司注册信息登记'
+  }, [isMaterialRoute])
+
+  useEffect(() => {
     if (!token) return
     setActiveToken(token)
   }, [token])

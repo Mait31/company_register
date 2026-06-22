@@ -25,13 +25,18 @@ class WeChatJsSdkService:
         return bool(settings.wechat_mp_app_id and settings.wechat_mp_app_secret)
 
     def create_signature(self, url: str) -> dict[str, Any]:
+        share_image_url = (
+            settings.wechat_share_image_url
+            or f"{settings.public_base_url.rstrip('/')}/wechat-share.png"
+        )
+
         if not self.is_configured():
             return {
                 "enabled": False,
                 "reason": "wechat_mp_app_id_or_secret_missing",
                 "title": settings.wechat_share_title,
                 "desc": settings.wechat_share_desc,
-                "imgUrl": settings.wechat_share_image_url,
+                "imgUrl": share_image_url,
             }
 
         ticket = self._get_jsapi_ticket()
@@ -51,7 +56,7 @@ class WeChatJsSdkService:
             "signature": signature,
             "title": settings.wechat_share_title,
             "desc": settings.wechat_share_desc,
-            "imgUrl": settings.wechat_share_image_url,
+            "imgUrl": share_image_url,
         }
 
     def _get_jsapi_ticket(self) -> str:
