@@ -306,6 +306,9 @@ export function MarketingHomePage() {
       <footer className="site-footer">
         <span>{brandName}</span>
         <span>吉尔吉斯斯坦、塔吉克斯坦签证与商务落地服务</span>
+        <a href="https://beian.miit.gov.cn/" rel="noreferrer" target="_blank">
+          备案号：浙ICP备2026036299号-1
+        </a>
       </footer>
 
       <div className="site-mobile-cta" aria-label="移动端咨询入口">
