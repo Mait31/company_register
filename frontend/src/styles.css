@@ -1837,6 +1837,10 @@ body {
   background: #eef8f7;
 }
 
+.site-nav-label-short {
+  display: none;
+}
+
 .site-header-contact {
   display: grid;
   justify-items: end;
@@ -2856,22 +2860,38 @@ body {
   }
 
   .site-brand em {
-    font-size: 11px;
+    display: none;
   }
 
   .site-nav {
-    gap: 6px;
-    scrollbar-width: none;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    overflow: visible;
   }
 
   .site-nav::-webkit-scrollbar {
     display: none;
   }
 
+  .site-nav-optional {
+    display: none;
+  }
+
   .site-nav a {
-    padding: 10px 12px;
+    min-width: 0;
+    padding: 10px 8px;
     font-size: 14px;
+    text-align: center;
     background: #f0f7f6;
+  }
+
+  .site-nav-label-full {
+    display: none;
+  }
+
+  .site-nav-label-short {
+    display: inline;
   }
 
   .site-hero {

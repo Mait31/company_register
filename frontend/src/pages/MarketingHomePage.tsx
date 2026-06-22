@@ -3,15 +3,15 @@ import heroImage from '../assets/central-asia-hero.webp'
 import galleryImage from '../assets/central-asia-gallery.webp'
 import wechatContactQr from '../assets/wechat-contact-qr.jpg'
 
-const brandName = '吉速通商业服务'
+const brandName = '吉速通出入境服务'
 
 const navItems = [
-  { label: '首页', href: '#home' },
-  { label: '签证办理', href: '#visa' },
-  { label: '企业服务', href: '#business' },
+  { label: '首页', mobile: true, mobileLabel: '首页', href: '#home' },
+  { label: '签证办理', mobile: true, mobileLabel: '服务项目', href: '#visa' },
+  { label: '公司办理', href: '#business' },
   { label: '财税服务', href: '#tax' },
   { label: '关于我们', href: '#about' },
-  { label: '联系我们', href: '#contact' },
+  { label: '联系我们', mobile: true, mobileLabel: '联系我们', href: '#contact' },
 ]
 
 const serviceCards = [
@@ -125,8 +125,9 @@ export function MarketingHomePage() {
         </a>
         <nav className="site-nav" aria-label="网站导航">
           {navItems.map((item) => (
-            <a href={item.href} key={item.href}>
-              {item.label}
+            <a className={item.mobile ? undefined : 'site-nav-optional'} href={item.href} key={item.href}>
+              <span className="site-nav-label-full">{item.label}</span>
+              <span className="site-nav-label-short">{item.mobileLabel || item.label}</span>
             </a>
           ))}
         </nav>
