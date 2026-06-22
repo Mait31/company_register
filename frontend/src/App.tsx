@@ -3,18 +3,28 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AdminOrderDetailPage, AdminOrderEditPage, AdminOrdersPage } from './pages/AdminOrdersPage'
 import { InvitationPage } from './pages/InvitationPage'
 import { LoginPage } from './pages/LoginPage'
+import { MarketingHomePage } from './pages/MarketingHomePage'
 
 const { Header, Content } = Layout
 
 export default function App() {
   const location = useLocation()
   const isPublic = location.pathname.startsWith('/i/') || location.pathname.startsWith('/invitations/')
+  const isAdmin = location.pathname.startsWith('/admin') || location.pathname === '/login'
 
   if (isPublic) {
     return (
       <Routes>
         <Route path="/i/:token/*" element={<InvitationPage />} />
         <Route path="/invitations/:token/*" element={<InvitationPage />} />
+      </Routes>
+    )
+  }
+
+  if (!isAdmin) {
+    return (
+      <Routes>
+        <Route path="*" element={<MarketingHomePage />} />
       </Routes>
     )
   }
