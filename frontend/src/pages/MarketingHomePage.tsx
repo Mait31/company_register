@@ -1,6 +1,9 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import heroImage from '../assets/central-asia-hero.webp'
 import galleryImage from '../assets/central-asia-gallery.webp'
+import wechatContactQr from '../assets/wechat-contact-qr.jpg'
+
+const brandName = '吉速通商业服务'
 
 const navItems = [
   { label: '首页', href: '#home' },
@@ -99,8 +102,10 @@ function SiteIcon({ name }: { name: string }) {
 }
 
 export function MarketingHomePage() {
+  const [wechatOpen, setWechatOpen] = useState(false)
+
   useEffect(() => {
-    document.title = '中亚通商务服务'
+    document.title = brandName
   }, [])
 
   return (
@@ -114,7 +119,7 @@ export function MarketingHomePage() {
             </svg>
           </span>
           <span>
-            <strong>中亚通商务服务</strong>
+            <strong>{brandName}</strong>
             <em>签证办理 · 公司办理 · 财税服务</em>
           </span>
         </a>
@@ -125,10 +130,10 @@ export function MarketingHomePage() {
             </a>
           ))}
         </nav>
-        <a className="site-header-contact" href="tel:+998555158883">
-          <span>咨询电话</span>
-          <strong>+998 55 515 8883</strong>
-        </a>
+        <button className="site-header-contact" onClick={() => setWechatOpen(true)} type="button">
+          <span>微信咨询</span>
+          <strong>扫码添加顾问</strong>
+        </button>
       </header>
 
       <section className="site-hero" aria-label="首页首屏">
@@ -137,9 +142,9 @@ export function MarketingHomePage() {
           <h1>吉尔吉斯斯坦、塔吉克斯坦签证与商务落地服务</h1>
           <p>为中国客户提供签证办理、公司注册、财税咨询与本地协助。</p>
           <div className="site-hero-actions" aria-label="主要咨询入口">
-            <a className="site-button site-button-primary" href="#contact">
+            <button className="site-button site-button-primary" onClick={() => setWechatOpen(true)} type="button">
               立即咨询
-            </a>
+            </button>
             <a className="site-button site-button-light" href="#visa">
               查看签证材料
             </a>
@@ -292,24 +297,54 @@ export function MarketingHomePage() {
           <p>把目的国家、办理事项和预计时间发给我们，先确认路径和材料清单。</p>
         </div>
         <div className="site-contact-actions">
-          <a className="site-button site-button-primary" href="tel:+998555158883">
-            电话咨询
-          </a>
-          <a className="site-button site-button-light" href="#contact">
+          <button className="site-button site-button-light" onClick={() => setWechatOpen(true)} type="button">
             微信咨询
-          </a>
+          </button>
         </div>
       </section>
 
       <footer className="site-footer">
-        <span>中亚通商务服务</span>
+        <span>{brandName}</span>
         <span>吉尔吉斯斯坦、塔吉克斯坦签证与商务落地服务</span>
       </footer>
 
       <div className="site-mobile-cta" aria-label="移动端咨询入口">
-        <a href="tel:+998555158883">电话咨询</a>
-        <a href="#contact">微信咨询</a>
+        <button onClick={() => setWechatOpen(true)} type="button">
+          微信咨询
+        </button>
       </div>
+
+      {wechatOpen ? (
+        <div
+          aria-labelledby="wechat-consult-title"
+          aria-modal="true"
+          className="site-wechat-modal"
+          role="dialog"
+        >
+          <button
+            aria-label="关闭微信咨询"
+            className="site-wechat-backdrop"
+            onClick={() => setWechatOpen(false)}
+            type="button"
+          />
+          <div className="site-wechat-panel">
+            <button
+              aria-label="关闭"
+              className="site-wechat-close"
+              onClick={() => setWechatOpen(false)}
+              type="button"
+            >
+              ×
+            </button>
+            <div className="site-wechat-copy">
+              <span>微信咨询</span>
+              <h2 id="wechat-consult-title">扫码添加吉速通顾问</h2>
+              <p>电脑端请使用微信扫码添加；手机端可长按二维码识别，发送办理国家和需求。</p>
+            </div>
+            <img alt="吉速通微信咨询二维码" className="site-wechat-qr" src={wechatContactQr} />
+          </div>
+        </div>
+      ) : null}
     </main>
   )
 }
