@@ -51,6 +51,33 @@ deploy/      Nginx、Docker、部署脚本
 
 后端统一挂载 `/api`。
 
+## 官网现状
+
+- 当前公网域名：`https://jsutong.cn/`
+- 官网品牌展示名：`吉速通出入境服务`
+- 主体公司名称：`吉速通（杭州）出入境服务有限公司`
+- ICP 备案号：`浙ICP备2026036299号-1`，官网页脚链接到 `https://beian.miit.gov.cn/`。
+- 官网首页是中文展示页，不做英文版。
+- 首页展示范围：吉尔吉斯斯坦、塔吉克斯坦签证服务，公司办理，财税服务，商务落地，自然风貌展示，微信咨询二维码。
+- 首页不提供电话咨询入口；所有公开咨询入口统一引导用户微信扫码联系。
+- 移动端导航收敛为三项：`首页`、`服务项目`、`联系我们`。桌面端保留完整导航。
+- 公司注册信息登记入口仍保留在 `/i/company-registration`，不是首页。
+- 委托书材料上传入口仍通过 `/i/:token/materials` 或 `/invitations/:token/materials` 使用。
+
+## 部署和域名
+
+- 生产部署按 Ubuntu + Docker Compose 运行。
+- Docker Compose 内置 Nginx 通过 `.env` 的 `NGINX_HTTP_PORT` 暴露，当前推荐保持 `127.0.0.1:8080`。
+- 服务器外层 Nginx 负责 HTTPS 证书和公网域名，反向代理到 `http://127.0.0.1:8080`。
+- 域名切换脚本：`deploy/scripts/set-domain.sh`。
+- 切换主域名示例：
+
+```bash
+sh deploy/scripts/set-domain.sh jsutong.cn --deploy
+```
+
+- 脚本会更新 `.env` 中的 `PUBLIC_BASE_URL`、`SERVER_NAME`、`WECHAT_MP_CALLBACK_BASE_URL`、`WECHAT_SHARE_IMAGE_URL`，不会修改数据库账号、存储目录或 Docker 端口。
+
 ## 当前主流程
 
 ```text
