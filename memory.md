@@ -61,7 +61,7 @@ deploy/      Nginx、Docker、部署脚本
 - 首页展示范围：吉尔吉斯斯坦、塔吉克斯坦签证服务，公司办理，财税服务，商务落地，自然风貌展示，微信咨询二维码。
 - 首页不提供电话咨询入口；所有公开咨询入口统一引导用户微信扫码联系。
 - 移动端导航收敛为三项：`首页`、`服务项目`、`联系我们`。桌面端保留完整导航。
-- 官网 Open Graph / WhatsApp 链接预览图使用 `/social-preview.png`，规格为 1200x630；旧 `/wechat-share.png` 继续保留给微信邀请或历史分享入口兼容。
+- 官网 Open Graph / WhatsApp 链接预览图使用 `/social-preview.png`，规格为 1200x630，源图保存在 `docs/design/social-preview-source.png` 并通过 `scripts/generate-social-preview.py` 生成；旧 `/wechat-share.png` 继续保留给微信邀请或历史分享入口兼容。
 - 公司注册信息登记入口仍保留在 `/i/company-registration`，不是首页。
 - 委托书材料上传入口仍通过 `/i/:token/materials` 或 `/invitations/:token/materials` 使用。
 
