@@ -4,6 +4,7 @@ import { AdminOrderDetailPage, AdminOrderEditPage, AdminOrdersPage } from './pag
 import { InvitationPage } from './pages/InvitationPage'
 import { LoginPage } from './pages/LoginPage'
 import { MarketingHomePage } from './pages/MarketingHomePage'
+import { VisaGuidePage } from './pages/VisaGuidePage'
 import { VisaSeoPage } from './pages/VisaSeoPage'
 
 const { Header, Content } = Layout
@@ -25,6 +26,7 @@ export default function App() {
   if (!isAdmin) {
     return (
       <Routes>
+        <Route path="/visa" element={<VisaGuidePage />} />
         <Route path="/visa/:slug" element={<VisaSeoPage />} />
         <Route path="*" element={<MarketingHomePage />} />
       </Routes>

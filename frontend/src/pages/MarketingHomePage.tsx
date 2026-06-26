@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import heroImage from '../assets/central-asia-hero.webp'
 import galleryImage from '../assets/central-asia-gallery.webp'
 import wechatContactQr from '../assets/wechat-contact-qr.jpg'
-import { visaSeoPages } from '../data/visaSeoPages'
 import { setPageSeo } from '../seo'
 
 const brandName = '吉速通出入境服务'
@@ -202,20 +201,14 @@ export function MarketingHomePage() {
             </article>
           ))}
         </div>
-      </section>
-
-      <section className="site-section site-seo-links-section" aria-label="吉尔吉斯斯坦签证常见问题">
-        <div className="site-section-heading">
-          <h2>吉尔吉斯斯坦签证常见问题</h2>
-          <p>把客户常搜的问题拆成独立说明页，先看费用影响因素、材料清单和办理路径。</p>
-        </div>
-        <div className="site-seo-link-grid">
-          {visaSeoPages.map((page) => (
-            <a className="site-seo-link-card" href={page.path} key={page.slug}>
-              <span>{page.keyword}</span>
-              <strong>{page.h1}</strong>
-            </a>
-          ))}
+        <div className="site-guide-strip">
+          <div>
+            <span>签证指南</span>
+            <strong>费用、材料和商务签证问题，集中放到指南中心查看。</strong>
+          </div>
+          <a className="site-guide-link" href="/visa">
+            查看签证指南
+          </a>
         </div>
       </section>
 
@@ -328,8 +321,8 @@ export function MarketingHomePage() {
 
       <footer className="site-footer">
         <span>{brandName}</span>
+        <a href="/visa">签证指南</a>
         <a href="/visa/jierjisisitan-qianzheng">吉尔吉斯斯坦签证</a>
-        <a href="/visa/jierjisisitan-qianzheng-duoshaoqian">签证费用咨询</a>
         <a href="https://beian.miit.gov.cn/" rel="noreferrer" target="_blank">
           备案号：浙ICP备2026036299号-1
         </a>

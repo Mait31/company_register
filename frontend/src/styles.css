@@ -2131,6 +2131,64 @@ body {
   line-height: 1.42;
 }
 
+.site-guide-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 22px 24px;
+  margin-top: 18px;
+  background:
+    linear-gradient(135deg, rgba(7, 84, 99, 0.96), rgba(15, 103, 111, 0.9)),
+    var(--site-teal);
+  border-radius: 8px;
+  box-shadow: 0 18px 50px rgba(6, 63, 76, 0.12);
+}
+
+.site-guide-strip span,
+.site-guide-strip strong {
+  display: block;
+}
+
+.site-guide-strip span {
+  color: #f2cb8d;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.site-guide-strip strong {
+  margin-top: 6px;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 850;
+  line-height: 1.42;
+}
+
+.site-guide-link {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 20px;
+  color: var(--site-teal);
+  font-size: 15px;
+  font-weight: 850;
+  text-decoration: none;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 8px;
+  transition:
+    background 0.18s ease,
+    transform 0.18s ease;
+}
+
+.site-guide-link:hover,
+.site-guide-link:focus-visible {
+  background: #ffffff;
+  transform: translateY(-1px);
+}
+
 .site-scenery-frame {
   margin: 0;
   overflow: hidden;
@@ -2731,6 +2789,78 @@ body {
   justify-content: flex-start;
 }
 
+.visa-guide-hero,
+.visa-guide-summary {
+  width: min(100% - 80px, 1180px);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.visa-guide-hero {
+  padding: 78px 0 36px;
+}
+
+.visa-guide-hero h1 {
+  max-width: 900px;
+  margin: 0;
+  color: var(--site-text);
+  font-size: 58px;
+  font-weight: 950;
+  line-height: 1.13;
+  letter-spacing: 0;
+}
+
+.visa-guide-hero p {
+  max-width: 780px;
+  margin: 22px 0 0;
+  color: var(--site-muted);
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.78;
+}
+
+.visa-guide-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.visa-guide-summary article {
+  min-height: 210px;
+  padding: 28px;
+  background: #ffffff;
+  border: 1px solid var(--site-border);
+  border-radius: 8px;
+  box-shadow: 0 18px 54px rgba(6, 63, 76, 0.08);
+}
+
+.visa-guide-summary span {
+  color: var(--site-gold);
+  font-size: 15px;
+  font-weight: 920;
+}
+
+.visa-guide-summary h2 {
+  margin: 18px 0 0;
+  color: var(--site-text);
+  font-size: 26px;
+  font-weight: 920;
+  line-height: 1.24;
+}
+
+.visa-guide-summary p {
+  margin: 14px 0 0;
+  color: var(--site-muted);
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.75;
+}
+
+.visa-guide-list {
+  margin-top: 24px;
+}
+
 @media (max-width: 640px) {
   .app-header {
     height: auto;
@@ -3261,6 +3391,21 @@ body {
     font-size: 21px;
   }
 
+  .site-guide-strip {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .site-guide-strip strong {
+    font-size: 18px;
+  }
+
+  .site-guide-link {
+    width: 100%;
+  }
+
   .site-scenery-frame img {
     aspect-ratio: 1 / 0.82;
   }
@@ -3431,6 +3576,36 @@ body {
 
   .seo-list-grid div {
     min-height: auto;
+  }
+
+  .visa-guide-hero,
+  .visa-guide-summary {
+    width: min(100% - 28px, 1180px);
+  }
+
+  .visa-guide-hero {
+    padding: 42px 0 24px;
+  }
+
+  .visa-guide-hero h1 {
+    font-size: 38px;
+    line-height: 1.18;
+  }
+
+  .visa-guide-hero p {
+    margin-top: 16px;
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  .visa-guide-summary {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .visa-guide-summary article {
+    min-height: auto;
+    padding: 22px;
   }
 }
 
