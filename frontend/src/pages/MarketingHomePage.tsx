@@ -246,6 +246,15 @@ export function MarketingHomePage() {
             ))}
           </div>
         </div>
+        <div className="site-guide-strip">
+          <div>
+            <span>公司注册指南</span>
+            <strong>费用、材料、外资股东、LLC 注册和税务记账问题，集中放到指南中心查看。</strong>
+          </div>
+          <a className="site-guide-link" href="/company">
+            查看公司注册指南
+          </a>
+        </div>
       </section>
 
       <section className="site-section site-tax-section" id="tax">
@@ -322,6 +331,7 @@ export function MarketingHomePage() {
       <footer className="site-footer">
         <span>{brandName}</span>
         <a href="/visa">签证指南</a>
+        <a href="/company">公司注册指南</a>
         <a href="/visa/jierjisisitan-qianzheng">吉尔吉斯斯坦签证</a>
         <a href="https://beian.miit.gov.cn/" rel="noreferrer" target="_blank">
           备案号：浙ICP备2026036299号-1

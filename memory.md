@@ -63,6 +63,7 @@ deploy/      Nginx、Docker、部署脚本
 - 移动端导航收敛为三项：`首页`、`服务项目`、`联系我们`。桌面端保留完整导航。
 - 官网 Open Graph / WhatsApp 链接预览图使用 `/social-preview.png`，规格为 1200x630，源图保存在 `docs/design/social-preview-source.png` 并通过 `scripts/generate-social-preview.py` 生成；旧 `/wechat-share.png` 继续保留给微信邀请或历史分享入口兼容。
 - 官网 SEO 页面矩阵第一批：围绕 `吉尔吉斯斯坦签证` 和费用类长尾词建立 `/visa/...` 落地页，`/visa` 作为签证指南中心承接长尾入口；首页不展示完整长尾卡片，只在签证模块保留轻量指南入口并通过 footer 链接分发内部权重；`robots.txt` 和 `sitemap.xml` 位于 `frontend/public/`。
+- 官网公司注册 SEO 页面矩阵第一批：围绕 `吉尔吉斯斯坦公司注册`、费用、材料、流程、周期、中国人注册公司、LLC/ОсОО、税务记账等问题建立 `/company/...` 落地页，`/company` 作为公司注册指南中心；首页企业服务模块只保留轻量指南入口，页面内容参考吉尔吉斯经济和商业部、trade.gov、UNCTAD 投资法资料和当地律所实务口径，并明确不替代律师或会计意见。
 - 公司注册信息登记入口仍保留在 `/i/company-registration`，不是首页。
 - 委托书材料上传入口仍通过 `/i/:token/materials` 或 `/invitations/:token/materials` 使用。
 

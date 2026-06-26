@@ -2772,6 +2772,10 @@ body {
   border-radius: 8px;
 }
 
+.seo-risk-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .seo-faq-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2783,6 +2787,38 @@ body {
   background: #f8fbfb;
   border: 1px solid rgba(7, 84, 99, 0.1);
   border-radius: 8px;
+}
+
+.seo-source-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.seo-source-list a {
+  display: flex;
+  align-items: center;
+  min-height: 74px;
+  padding: 16px 18px;
+  color: var(--site-teal);
+  font-size: 15px;
+  font-weight: 820;
+  line-height: 1.45;
+  text-decoration: none;
+  background: #f2f8f7;
+  border: 1px solid rgba(7, 84, 99, 0.12);
+  border-radius: 8px;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease;
+}
+
+.seo-source-list a:hover,
+.seo-source-list a:focus-visible {
+  background: #ffffff;
+  border-color: rgba(7, 84, 99, 0.28);
+  transform: translateY(-1px);
 }
 
 .site-footer-links {
@@ -3554,7 +3590,8 @@ body {
   .seo-hero-actions,
   .seo-content-grid,
   .seo-list-grid,
-  .seo-faq-list {
+  .seo-faq-list,
+  .seo-source-list {
     grid-template-columns: 1fr;
   }
 
