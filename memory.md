@@ -73,7 +73,8 @@ deploy/      Nginx、Docker、部署脚本
 - Docker Compose 内置 Nginx 通过 `.env` 的 `NGINX_HTTP_PORT` 暴露，当前推荐保持 `127.0.0.1:8080`。
 - 服务器外层 Nginx 负责 HTTPS 证书和公网域名，反向代理到 `http://127.0.0.1:8080`。
 - 域名切换脚本：`deploy/scripts/set-domain.sh`。
-- 常规部署脚本 `deploy/scripts/deploy.sh` 会先 `git pull --ff-only`，再最多重试 3 次 `docker compose up -d --build`；如果卡在 Docker Hub 基础镜像元数据，例如 `node:22-alpine`、`python:3.12-slim` 的 `registry-1.docker.io ... EOF`，优先在腾讯云服务器配置 Docker registry mirror 后重跑部署，不要排查 GitHub SSH。
+- 常规部署脚本 `deploy/scripts/deploy.sh` 会先 `git pull --ff-only`，再最多重试 3 次 `docker compose up -d --build`；如果卡在 Docker Hub 基础镜像元数据，例如 `node:22-alpine`、`python:3.12-slim` 的 `registry-1.docker.io ... EOF`，这是服务器访问 Docker Hub 的问题，和 SSH 登录无关，不要排查 GitHub SSH。
+- 基础镜像可通过 `.env` 覆盖：`PYTHON_IMAGE`、`NODE_IMAGE`、`NGINX_IMAGE`、`POSTGRES_IMAGE`；服务器可执行 `sh deploy/scripts/set-docker-images.sh` 一键切到 `docker.m.daocloud.io/library` 镜像前缀。
 - 切换主域名示例：
 
 ```bash

@@ -40,8 +40,17 @@ Docker registry mirror once, then run this deploy script again:
   docker info | sed -n '/Registry Mirrors/,+5p'
   sh deploy/scripts/deploy.sh
 
-If the mirror is not available in the current region, fix Docker Hub connectivity
-or set an available Docker registry mirror before deploying.
+If the daemon mirror is not available in the current region, set explicit image
+sources in .env and run this deploy script again. Example:
+
+  cp .env .env.bak.$(date +%Y%m%d%H%M%S)
+  cat >> .env <<'EOF_IMAGES'
+  PYTHON_IMAGE=docker.m.daocloud.io/library/python:3.12-slim
+  NODE_IMAGE=docker.m.daocloud.io/library/node:22-alpine
+  NGINX_IMAGE=docker.m.daocloud.io/library/nginx:1.27-alpine
+  POSTGRES_IMAGE=docker.m.daocloud.io/library/postgres:16-alpine
+  EOF_IMAGES
+  sh deploy/scripts/deploy.sh
 EOF
     exit 1
   fi
