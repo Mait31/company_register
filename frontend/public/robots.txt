@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /login
+Disallow: /i/
+Disallow: /invitations/
+
+Sitemap: https://jsutong.cn/sitemap.xml

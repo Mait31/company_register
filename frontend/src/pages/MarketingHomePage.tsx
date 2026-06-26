@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import heroImage from '../assets/central-asia-hero.webp'
 import galleryImage from '../assets/central-asia-gallery.webp'
 import wechatContactQr from '../assets/wechat-contact-qr.jpg'
+import { visaSeoPages } from '../data/visaSeoPages'
+import { setPageSeo } from '../seo'
 
 const brandName = '吉速通出入境服务'
 
@@ -105,7 +107,12 @@ export function MarketingHomePage() {
   const [wechatOpen, setWechatOpen] = useState(false)
 
   useEffect(() => {
-    document.title = brandName
+    setPageSeo({
+      title: '吉速通出入境服务｜吉尔吉斯斯坦、塔吉克斯坦签证与商务落地服务',
+      description: '吉速通出入境服务提供吉尔吉斯斯坦、塔吉克斯坦签证办理、公司办理、财税服务与商务落地协助。',
+      path: '/',
+      keywords: ['吉尔吉斯斯坦签证', '塔吉克斯坦签证', '中亚签证办理', '吉尔吉斯斯坦商务签证'],
+    })
   }, [])
 
   return (
@@ -193,6 +200,21 @@ export function MarketingHomePage() {
                 ))}
               </ul>
             </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="site-section site-seo-links-section" aria-label="吉尔吉斯斯坦签证常见问题">
+        <div className="site-section-heading">
+          <h2>吉尔吉斯斯坦签证常见问题</h2>
+          <p>把客户常搜的问题拆成独立说明页，先看费用影响因素、材料清单和办理路径。</p>
+        </div>
+        <div className="site-seo-link-grid">
+          {visaSeoPages.map((page) => (
+            <a className="site-seo-link-card" href={page.path} key={page.slug}>
+              <span>{page.keyword}</span>
+              <strong>{page.h1}</strong>
+            </a>
           ))}
         </div>
       </section>
@@ -306,7 +328,8 @@ export function MarketingHomePage() {
 
       <footer className="site-footer">
         <span>{brandName}</span>
-        <span>吉尔吉斯斯坦、塔吉克斯坦签证与商务落地服务</span>
+        <a href="/visa/jierjisisitan-qianzheng">吉尔吉斯斯坦签证</a>
+        <a href="/visa/jierjisisitan-qianzheng-duoshaoqian">签证费用咨询</a>
         <a href="https://beian.miit.gov.cn/" rel="noreferrer" target="_blank">
           备案号：浙ICP备2026036299号-1
         </a>
